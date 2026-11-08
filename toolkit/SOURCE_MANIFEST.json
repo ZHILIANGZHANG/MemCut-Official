@@ -20,8 +20,8 @@
     },
     {
       "path": "CITATION.cff",
-      "bytes": 483,
-      "sha256": "237dd4535f3c77c0a8ea19b0a0481e372467449787f93e1a7715619b0c96f525",
+      "bytes": 1581,
+      "sha256": "3b3e7a8440128aba40652cde874eb1544ee5505af32ad5c05d392722ba00eff3",
       "kind": "new"
     },
     {
@@ -52,8 +52,8 @@
     },
     {
       "path": "README.md",
-      "bytes": 6782,
-      "sha256": "4f43c403922e7920e540ac7062d83fefc8370e05250ecac00dfe96850b3c23f7",
+      "bytes": 6874,
+      "sha256": "7fb552c7c3fbd6421df673912896e6026a08ce5079759aa5bca320f4dc0e8926",
       "kind": "doc"
     },
     {

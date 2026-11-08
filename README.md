@@ -10,6 +10,13 @@
 
 # MemCut: Every Secret Leaves a Trail in the Long-Term Memory of LLM Agents
 
+<p align="center">
+  Cheng Zhang<sup>1</sup>, Xuanning Cao<sup>2</sup>, Zhicheng Zheng<sup>1</sup>, Hui Xiong<sup>1,3</sup><br>
+  <sup>1</sup>The Hong Kong University of Science and Technology (Guangzhou)<br>
+  <sup>2</sup>University of Science and Technology of China<br>
+  <sup>3</sup>The Hong Kong University of Science and Technology
+</p>
+
 MemCut is a benchmark for **user-requested forgetting** in the long-term memory of LLM agents. A user asks the
 assistant to forget one fact. The question is whether the fact is still recoverable from what the memory holds,
 including from ordinary messages that never state it.
@@ -67,8 +74,9 @@ Then follow the toolkit's guides:
 ## Citation
 
 ```bibtex
-@misc{memcut2026,
+@misc{zhang2026memcut,
   title         = {MemCut: Every Secret Leaves a Trail in the Long-Term Memory of LLM Agents},
+  author        = {Zhang, Cheng and Cao, Xuanning and Zheng, Zhicheng and Xiong, Hui},
   year          = {2026},
   eprint        = {2610.21405},
   archivePrefix = {arXiv},

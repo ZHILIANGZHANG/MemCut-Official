@@ -4,12 +4,34 @@ title: "MemCut evaluation toolkit"
 type: software
 license: MIT
 authors:
-  - name: "The MemCut authors"
+  - family-names: "Zhang"
+    given-names: "Cheng"
+    affiliation: "The Hong Kong University of Science and Technology (Guangzhou)"
+  - family-names: "Cao"
+    given-names: "Xuanning"
+    affiliation: "University of Science and Technology of China"
+  - family-names: "Zheng"
+    given-names: "Zhicheng"
+    affiliation: "The Hong Kong University of Science and Technology (Guangzhou)"
+  - family-names: "Xiong"
+    given-names: "Hui"
+    affiliation: "The Hong Kong University of Science and Technology (Guangzhou); The Hong Kong University of Science and Technology"
 preferred-citation:
   type: article
   title: "MemCut: Every Secret Leaves a Trail in the Long-Term Memory of LLM Agents"
   authors:
-    - name: "The MemCut authors"
+    - family-names: "Zhang"
+      given-names: "Cheng"
+      affiliation: "The Hong Kong University of Science and Technology (Guangzhou)"
+    - family-names: "Cao"
+      given-names: "Xuanning"
+      affiliation: "University of Science and Technology of China"
+    - family-names: "Zheng"
+      given-names: "Zhicheng"
+      affiliation: "The Hong Kong University of Science and Technology (Guangzhou)"
+    - family-names: "Xiong"
+      given-names: "Hui"
+      affiliation: "The Hong Kong University of Science and Technology (Guangzhou); The Hong Kong University of Science and Technology"
   year: 2026
   identifiers:
     - type: other

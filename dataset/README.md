@@ -86,8 +86,9 @@ companies or events.
 Data: CC BY 4.0 (see `LICENSE`). Please cite the MemCut paper:
 
 ```bibtex
-@misc{memcut2026,
+@misc{zhang2026memcut,
   title         = {MemCut: Every Secret Leaves a Trail in the Long-Term Memory of LLM Agents},
+  author        = {Zhang, Cheng and Cao, Xuanning and Zheng, Zhicheng and Xiong, Hui},
   year          = {2026},
   eprint        = {2610.21405},
   archivePrefix = {arXiv},

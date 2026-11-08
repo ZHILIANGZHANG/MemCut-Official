@@ -106,8 +106,9 @@ systems under test at setup rather than vendoring them; see `NOTICE` for their r
 ## Citation
 
 ```bibtex
-@misc{memcut2026,
+@misc{zhang2026memcut,
   title         = {MemCut: Every Secret Leaves a Trail in the Long-Term Memory of LLM Agents},
+  author        = {Zhang, Cheng and Cao, Xuanning and Zheng, Zhicheng and Xiong, Hui},
   year          = {2026},
   eprint        = {2610.21405},
   archivePrefix = {arXiv},
