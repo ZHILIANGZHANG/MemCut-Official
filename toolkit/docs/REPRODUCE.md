@@ -13,7 +13,7 @@ Every paid stage reads its key from the environment (USAGE.md, section 3). `prep
 
 | Paper | Setting | How |
 |---|---|---|
-| Main table: native and residual recovery after S0, S1, S2 | five systems (Turn RAG, Session RAG, MemoryBank, Nemori, LightMem) × four write models; pool 20, budget 10; reader Qwen3.8-Flash; EP02–EP15, EP01 for development | `python run.py aligned prepare --system <system> --output <dir> $FILES --model <write model> --endpoint <url>`, then `aligned run --run <dir>` |
+| Main table: native and residual recovery after S0, S1, S2 | five systems (Turn RAG, Session RAG, MemoryBank, Nemori, LightMem) × four write models; pool 20, budget 10; reader Qwen3.8-Flash; EP01–EP15 | `python run.py aligned prepare --system <system> --output <dir> $FILES --model <write model> --endpoint <url>`, then `aligned run --run <dir>` |
 | Retention | the same runs | `python run.py aligned-retention --run <dir>` |
 | Pool sweep (Figure 3a) | pool 10, 20, 30, 40, 50, 60 at budget 10; Turn RAG, MemoryBank, LightMem; DeepSeek and Qwen; EP01–EP05 | one PLAN per pool size with the staged entry points: `turnrag prepare ... --candidate-objects N --candidate-turns N --k 10`, `source prepare --system lightmem ... --candidate-objects N --candidate-turns N --k 10`; each pool is ranked afresh |
 | Budget sweep (Figure 3b) | budget 2, 4, 6, 10, 15, 20 at pool 20 | one PLAN per system with `--k 2 4 6 10 15 20`; the budgets delete prefixes of one ranking |

@@ -117,8 +117,8 @@
     },
     {
       "path": "docs/ADDING_A_SYSTEM.md",
-      "bytes": 4849,
-      "sha256": "bddc4c2d1e44ac9e6d2d0484cbd42fe6e36de565916fa7da2f9e49e9e03da3bb",
+      "bytes": 4813,
+      "sha256": "1cd8931b6651eb234cf6c889d5c55f54bbe1e8a4967fb2ed0a7c2282c6e0a09c",
       "kind": "new"
     },
     {
@@ -136,8 +136,8 @@
     },
     {
       "path": "docs/REPRODUCE.md",
-      "bytes": 2780,
-      "sha256": "40c1b844d068f316359143ad054e38dcae05c49f8a190cd6de763b12a105d4d2",
+      "bytes": 2758,
+      "sha256": "a689b601deda977f7509ac080a576e4ebef0882618d8a603d654c780c4633868",
       "kind": "new"
     },
     {

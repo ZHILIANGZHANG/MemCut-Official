@@ -61,7 +61,7 @@ prepared under the old identity is not resumed under the new one.
 
 ## 4. Report it
 
-Run the main setting (pool 20, budget 10) on EP02–EP15 with EP01 for development, and report native and residual
-recovery for S0, S1 and S2 together with retention, as the data card asks. State the write model, the reader and
+Run the main setting (pool 20, budget 10) on the 15 main-set episodes, and report native and residual recovery for
+S0, S1 and S2 together with retention. State the write model, the reader and
 the system's retrieval depth. If your system needs an upstream checkout, pin its commit in
 `tools/setup_upstreams.py` and list it in `NOTICE`.

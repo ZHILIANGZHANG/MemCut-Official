@@ -14,8 +14,8 @@ MemCut is a benchmark for **user-requested forgetting** in the long-term memory 
 assistant to forget one fact. The question is whether the fact is still recoverable from what the memory holds,
 including from ordinary messages that never state it.
 
-- **456 hand-designed secrets** in 15 long, multi-session conversations (43,402 messages), each with its disclosure,
-  6–10 evidence messages, about two dozen look-alike distractors and a five-option readout question.
+- **456 secrets** in 15 long, multi-session conversations (43,402 messages), each with its disclosure, annotated
+  evidence messages, look-alike distractors and a five-option readout question.
 - **Two recovery metrics**: *native* recovery through the system's own retrieval, and *residual* recovery from every
   surviving object derived from the evidence.
 - **Reference deletion baselines** (S0: delete the disclosure; S1: retrieval-ranked cleanup; S2: LLM-guided cleanup)
@@ -63,20 +63,6 @@ Then follow the toolkit's guides:
 | add my own facts to an episode | [toolkit/docs/EXTENDING_DATA.md](toolkit/docs/EXTENDING_DATA.md) |
 | read the full protocol | [toolkit/PROTOCOL.md](toolkit/PROTOCOL.md) |
 | understand the data format | [dataset/README.md](dataset/README.md), [dataset/SCHEMA.md](dataset/SCHEMA.md) |
-
-## The case-study episode
-
-The paper's case study follows one relation-chain fact: the firm the user's company hired belongs to the wife of
-its CFO. That data is the episode EP08A, listed in the bundle apart from the 15 main-set episodes. It is EP08 with
-the fact's evidence, disclosure and distractors at the ends of existing sessions, built from
-[`dataset/case_study/arden_overlay.json`](dataset/case_study/arden_overlay.json) by
-[`toolkit/tools/extend_episode.py`](toolkit/tools/extend_episode.py).
-
-## Using the benchmark
-
-The answers and the evidence ship with the data, so there is no hidden test set. Build the memory from the
-`public/` side only, say which episodes you used for development (the paper uses EP01 for development and EP02–EP15
-as the test set), and report both readouts and retention.
 
 ## Citation
 

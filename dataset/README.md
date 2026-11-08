@@ -52,12 +52,8 @@ The field-by-field description is in `SCHEMA.md`.
 
 ## How the data was made
 
-Every decision about content was made by the benchmark authors, against a written construction guide: the scenario
-and cast, then each fact with its deletion request, then where the disclosure falls and which turns carry evidence,
-then distractors that share surface features with the evidence, then the question and its options. A language model
-phrased each designed turn as dialogue; the authors checked every turn against its design and sent deviations back
-to be phrased again (the paper's Appendix A gives the checks). The evidence annotations and minimal sufficient sets
-are the authors' judgement, not the output of a model run.
+The construction of the episodes, the evidence annotations and the distractors is described in the paper (Section
+3.3 and Appendix A).
 
 ## The case-study episode EP08A
 
@@ -77,15 +73,10 @@ existing EP08 messages.
 EP08A is built from a declarative overlay by the toolkit's `tools/extend_episode.py`, the same tool anyone can use
 to add a fact to an episode.
 
-## Using it honestly
+## Using the data
 
-The answers and the evidence ship with the data, so there is no hidden test set. When you report numbers on MemCut:
-
-- build the memory from `public/` only; nothing under `author/` may reach the system under test;
-- say which episodes you used for development; the authors' own work used EP01 for development and EP02–EP15 as a
-  test set run once after the configuration was frozen;
-- report both readouts and retention, not one of them;
-- report the main set (EP01–EP15) and the case-study episode separately.
+- Build the memory from `public/` only; nothing under `author/` may reach the system under test.
+- Report both readouts and retention, not one of them.
 
 The timeline is fictional (session timestamps run through 2026); nothing in the data refers to real persons,
 companies or events.
