@@ -12,7 +12,7 @@ from memcut.native_memory.persistence import write_json
 from memcut.native_memory.profiles import load_profile, resolve_profile, verify_profile
 from . import PROTOCOL as NATIVE_STORAGE_PROTOCOL
 from .scoring import evaluation_protocol, select_rotations
-from .candidates import build_pool, rank_leakcut, verify_pool
+from .candidates import build_pool, rank_s2, verify_pool
 from .completions import CachedCompletions
 from .evaluation import contexts, evaluate, summarize, answer_request, score_response
 from .memorybank import SourceMemoryBank, import_source, open_memorybank
@@ -307,7 +307,7 @@ async def delete(folder, plan, completions, *, seed=None, claim_ids=None):
                 raise ValueError('Pool does not match shared S0')
             sealed_write(poolpath, pool)
             rankpath = base / 'S2_ORDER.json'
-            ranking = read(rankpath) if rankpath.exists() else rank_leakcut(pool, selector, plan['models']['selector'])
+            ranking = read(rankpath) if rankpath.exists() else rank_s2(pool, selector, plan['models']['selector'])
             sealed_write(rankpath, ranking)
             for strategy in ('S1', 'S2'):
                 order = [r['turn_id'] for r in pool['turns']] if strategy == 'S1' else ranking['order']
@@ -449,7 +449,7 @@ def report(folder, plan):
                 len(receipts) == len(plan['claims']) and all(r['budget_complete'] for r in receipts))
     if 'S2@10' in plan['conditions']:
         result['named_metrics'] = {name: result['metrics'][key] for name, key in
-                                  [('native-leakcut', 'native-S2@10'), ('residual-leakcut', 'residual-S2@10')]}
+                                  [('native-S2', 'native-S2@10'), ('residual-S2', 'residual-S2@10')]}
     if plan.get('retention'):
         result['utility'] = []
         for claim in plan['claims']:

@@ -69,7 +69,7 @@ def replies(cut_off=()):
     def create(**request):
         system, body = request['messages'][0]['content'], request['messages'][-1]['content']
         finish = 'stop'
-        if 'Rank candidate source groups' in system:
+        if 'Score candidate turns for a targeted memory deletion' in system:
             payload = json.loads(body)
             content = {'scores': [{'id': c['id'], 'score': 10 * i / max(1, len(payload['candidates']) - 1),
                                    'reason': 'Fixture reverse ranking.'} for i, c in enumerate(payload['candidates'])]}

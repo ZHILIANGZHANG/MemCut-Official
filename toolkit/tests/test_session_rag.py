@@ -295,9 +295,9 @@ def test_pool_uses_turn_scores_and_precise_text_exposures_without_gold():
     assert [r['turn_id'] for r in pool['turns']] == ['a1', 'a2']
     assert pool['turns'][0]['score'] == pytest.approx(.9)
     assert pool['turns'][1]['score'] == pytest.approx(.1)
-    payload, groups = selector_input(pool)
-    assert len(groups) == 2
-    assert {o['text'] for o in payload['objects']} == {bank.turns[t]['text'] for t in ('a1', 'a2')}
+    payload, candidates = selector_input(pool)
+    assert [c['turn_id'] for c in candidates] == ['a1', 'a2']
+    assert [c['texts'] for c in payload['candidates']] == [[bank.turns[t]['text']] for t in ('a1', 'a2')]
     assert len({tuple(row['exposed_obj_ids']) for row in pool['turns']}) == 2
     # Research-only evidence annotations never enter search/turn scoring.
     for row in bank.turns.values():
@@ -349,9 +349,9 @@ def test_pool_requires_s0_direct_deletion():
 def fixture_response(**request):
     system = request['messages'][0]['content']
     body = request['messages'][-1]['content']
-    if 'Rank candidate source groups' in system:
+    if 'Score candidate turns for a targeted memory deletion' in system:
         payload = json.loads(body)
-        assert set(payload) == {'deletion_request', 'objects', 'candidates'}
+        assert set(payload) == {'deletion_request', 'candidates'}
         content = {'scores': [
             {'id': candidate['id'], 'score': 10 * i / max(1, len(payload['candidates']) - 1),
              'reason': 'Reverse relevance for fixture.'}
@@ -704,3 +704,11 @@ def test_cli_reference_inherits_cohort_budget_and_execution(prepared, monkeypatc
     with pytest.raises(ValueError, match='Claims exceed'):
         cli.main()
     assert not forbidden.exists()
+
+
+def test_the_chunk_budget_leaves_room_for_the_encoders_document_prefix():
+    bank, _, tokenizer = new_bank()
+    plain = bank.chunk_budget()
+    assert plain == bank.settings['embedding']['max_seq_length']
+    bank.settings['embedding'] = {**bank.settings['embedding'], 'document_prefix': 'passage: '}
+    assert bank.chunk_budget() == plain - len(tokenizer.encode('passage: ', add_special_tokens=False))

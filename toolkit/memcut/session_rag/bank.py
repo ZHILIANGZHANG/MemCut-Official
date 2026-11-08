@@ -10,7 +10,7 @@ import json
 import numpy as np
 
 from memcut.native_memory.contract import SearchResult, digest
-from memcut.raw_turn_rag.embedding import validate_vectors
+from memcut.raw_turn_rag.embedding import validate_vectors, with_prefix
 from memcut.source_anchored_systems.base import SourceBank, SourceObject
 from memcut.source_anchored_v2.candidates import candidate_protocol
 from memcut.source_anchored_v2 import PROTOCOL
@@ -49,6 +49,12 @@ class SessionBank(SourceBank):
         self.rows = {}
         self._source_sha256 = digest(self.turns)
 
+    def chunk_budget(self):
+        """The encoder's sequence length minus the tokens of its document prefix (none for MiniLM)."""
+        prefix = self.settings['embedding'].get('document_prefix', '')
+        used = len(self.tokenizer.encode(prefix, add_special_tokens=False)) if prefix else 0
+        return self.settings['embedding']['max_seq_length'] - used
+
     @property
     def split_sessions(self):
         return sum(len(row['chunks']) > 1 for row in self.rows.values())
@@ -67,12 +73,12 @@ class SessionBank(SourceBank):
         stored = [{'turn_id': tid, 'text': self.turns[tid]['text']} for tid in tids]
         return {'session_id': sid, 'turn_ids': list(tids), 'turns': stored,
                 'text': '\n'.join(t['text'] for t in stored),
-                'chunks': chunk_session(tids, self.turns, self.tokenizer,
-                                        self.settings['embedding']['max_seq_length'])}
+                'chunks': chunk_session(tids, self.turns, self.tokenizer, self.chunk_budget())}
 
     def _encode_rows(self, rows):
         chunks = [chunk for row in rows.values() for chunk in row['chunks']]
-        vectors = validate_vectors(self.embedder.encode([c['text'] for c in chunks]),
+        vectors = validate_vectors(self.embedder.encode(with_prefix(self.settings['embedding'], [c['text'] for c in chunks],
+                                                                    'document')),
                                    len(chunks), self.settings['embedding']['dimensions'])
         for chunk, vector in zip(chunks, vectors):
             chunk['vector'] = vector.tolist()
@@ -134,7 +140,8 @@ class SessionBank(SourceBank):
     def _query_vector(self, query):
         # Match RawTurn exactly: the pinned encoder applies its ordinary query
         # max_seq_length behavior. search() records any truncated query.
-        return validate_vectors(self.embedder.encode([query]), 1, self.settings['embedding']['dimensions'])[0]
+        return validate_vectors(self.embedder.encode(with_prefix(self.settings['embedding'], [query], 'query')), 1,
+                                self.settings['embedding']['dimensions'])[0]
 
     @staticmethod
     def _cosines(vectors, query):
@@ -288,7 +295,8 @@ class SessionBank(SourceBank):
             # Exactly RawTurn's text/vector cache identity. Long candidate turns
             # retain the encoder's established truncation, explicitly logged;
             # their stored body and selector-visible text are never truncated.
-            vectors = validate_vectors(self.embedder.encode(texts), len(texts), self.settings['embedding']['dimensions'])
+            vectors = validate_vectors(self.embedder.encode(with_prefix(self.settings['embedding'], texts, 'document')),
+                                       len(texts), self.settings['embedding']['dimensions'])
             cosines = self._cosines(vectors, q)
             for row, text, score in zip(candidates.values(), texts, cosines):
                 length = token_count(text, self.tokenizer)

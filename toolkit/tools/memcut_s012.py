@@ -38,8 +38,9 @@ def prepare(args):
         raise ValueError(f'{qwen.MODEL} is served from {qwen.ENDPOINT} only (got {args.endpoint})')
     native_eval_k = getattr(args, 'native_eval_k', None)
     accept_coverage = bool(getattr(args, 'accept_coverage', False))
-    if native_eval_k is not None and args.system not in RAG:
-        raise ValueError('--native-eval-k is a retrieval control setting (turnrag, sessionrag)')
+    embedding = getattr(args, 'embedding', None)
+    if (native_eval_k is not None or embedding is not None) and args.system not in RAG:
+        raise ValueError('--native-eval-k and --embedding are retrieval control settings (turnrag, sessionrag)')
     if accept_coverage and args.system != 'sessionrag':
         raise ValueError('--accept-coverage applies to sessionrag only')
     # Prepare next to the target and rename at the end: an interrupted prepare leaves no half plan behind.
@@ -51,7 +52,8 @@ def prepare(args):
             options = dict(source=args.source, contracts=args.contracts, annotations=args.annotations,
                 answer_model=args.model, selector_model=args.model, endpoint=args.endpoint, claim_ids=args.claims)
             if args.system in RAG:              # formation is local: no write model
-                options.update(native_eval_k=16 if native_eval_k is None else native_eval_k)
+                options.update(native_eval_k=16 if native_eval_k is None else native_eval_k,
+                               embedding=embedding or 'e5-small-v2')
                 if args.system == 'sessionrag':  # the uniform cap and two fixed trials, as for the other rows
                     options.update(qa_max_tokens=ANSWER_POLICY['max_tokens'], early_stop=False)
             else:
@@ -205,7 +207,10 @@ def main():
     p.add_argument('--model', default=qwen.MODEL)
     p.add_argument('--endpoint', default=qwen.ENDPOINT)
     p.add_argument('--claims', nargs='+', help='claim ids, c1 c2 or c1,c2')
-    p.add_argument('--native-eval-k', type=int, help='turnrag, sessionrag: items of the native readout (default 16)')
+    p.add_argument('--native-eval-k', type=int,
+                   help='turnrag, sessionrag: items of the native readout (default 16)')
+    p.add_argument('--embedding', choices=['e5-small-v2', 'all-MiniLM-L6-v2'],
+                   help='turnrag, sessionrag: retrieval encoder (default e5-small-v2)')
     p.add_argument('--accept-coverage', action='store_true',
                    help='sessionrag: keep a native k whose context shows over 25%% of the episode')
     for name in ('run', 'build', 'delete', 'answer', 'report', 'status'):

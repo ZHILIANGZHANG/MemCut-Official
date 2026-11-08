@@ -13,7 +13,7 @@ import pytest
 from memcut.native_memory.persistence import write_json
 from memcut.raw_turn_rag import runner
 from memcut.raw_turn_rag.bank import RawTurnBank
-from memcut.raw_turn_rag.embedding import LocalEmbeddings
+from memcut.raw_turn_rag.embedding import LocalEmbeddings, embedding_settings, DEFAULT_EMBEDDING
 from memcut.source_anchored_v2.completions import CachedCompletions
 from memcut.source_anchored_v2.evaluation import contexts, evaluate
 
@@ -36,9 +36,9 @@ class FixtureEmbedding:
 
 def response(**request):
     system, body = request['messages'][0]['content'], request['messages'][-1]['content']
-    if 'Rank candidate source groups' in system:
+    if 'Score candidate turns for a targeted memory deletion' in system:
         payload = json.loads(body)
-        assert set(payload) == {'deletion_request', 'objects', 'candidates'}
+        assert set(payload) == {'deletion_request', 'candidates'}
         content = {'scores': [{'id': c['id'], 'score': 10*i/max(1,len(payload['candidates'])-1),
                               'reason': 'Local fixture reverse ranking.'}
                              for i,c in enumerate(payload['candidates'])]}
@@ -119,7 +119,7 @@ def test_full_pipeline_staging_pure_delete_and_different_rankings(prepared):
     runner.answer(folder, plan, cache)
     summary = runner.report(folder, plan)
     assert summary['main_complete'] and summary['scoring']['rotation_count'] == 2
-    assert set(summary['named_metrics']) == {'native-leakcut','residual-leakcut'}
+    assert set(summary['named_metrics']) == {'native-S2','residual-S2'}
     assert summary['metrics']['residual-S1@10']['rate'] == 0
     assert summary['metrics']['residual-S2@10']['rate'] == 1
     assert summary['metrics']['native-S2@10']['conditional']['claim_ids'] == ['c1','c2']
@@ -197,8 +197,9 @@ def test_candidate40_and_insufficient_budget_remain_explicit(prepared):
     assert r['actual_k'] == 5 and not r['budget_complete']
 
 
-def test_embeddings_cached_by_content_and_settings(tmp_path):
-    settings = runner.read(runner.CONFIG)['embedding']
+@pytest.mark.parametrize('name', ['e5-small-v2', 'all-MiniLM-L6-v2'])
+def test_embeddings_cached_by_content_and_settings(tmp_path, name):
+    settings = {**embedding_settings(name), 'revision': embedding_settings(name)['revision'] or 'fixture-commit'}
     class FakeEncoder:
         def __init__(self):
             self.calls = []
@@ -221,8 +222,9 @@ def test_embeddings_cached_by_content_and_settings(tmp_path):
 
 
 @pytest.mark.skipif(os.environ.get('MEMCUT_NATIVE_TESTS') != '1', reason='Explicit local encoder runtime required')
-def test_real_local_minilm_search_and_reload(tmp_path):
-    settings = runner.read(runner.CONFIG)
+@pytest.mark.parametrize('name', ['e5-small-v2', 'all-MiniLM-L6-v2'])
+def test_real_local_encoder_search_and_reload(tmp_path, name):
+    settings = {**runner.read(runner.CONFIG), 'native_eval_k': 16, 'embedding': embedding_settings(name)}
     embedder = LocalEmbeddings(settings['embedding'], tmp_path/'vectors')
     turns = {f't{i}': {'text': t, 'role': 'user'} for i,t in enumerate([
         'The restaurant bought eight blue chairs.', 'Oranges and apples arrived at the fruit shop.',
@@ -250,3 +252,42 @@ def test_existing_fine_lightmem_formation_identity_is_unchanged():
     plan = runner.shared.read(folder/'PLAN.json')
     current = {**plan, 'code': runner.shared.code_identity()}
     assert runner.shared.formation_identity(plan) == runner.shared.formation_identity(current)
+
+
+def test_both_encoders_are_selectable_and_recorded_in_the_plan(prepared, tmp_path):
+    folder, plan, factory, kwargs = prepared
+    assert plan['settings']['embedding'] == embedding_settings(DEFAULT_EMBEDDING) and DEFAULT_EMBEDDING == 'e5-small-v2'
+    other = runner.prepare(tmp_path/'minilm', **kwargs, embedding='all-MiniLM-L6-v2')
+    assert other['settings']['embedding']['model'] == 'sentence-transformers/all-MiniLM-L6-v2'
+    assert runner.load_plan(tmp_path/'minilm')['settings']['embedding']['name'] == 'all-MiniLM-L6-v2'
+    with pytest.raises(ValueError, match='Unknown embedding'):
+        runner.prepare(tmp_path/'unknown', **kwargs, embedding='bge')
+
+
+def test_e5_prefixes_reach_the_encoder_and_minilm_takes_plain_text(prepared):
+    folder, plan, factory, kwargs = prepared
+    for name, query_prefix, document_prefix in (('e5-small-v2', 'query: ', 'passage: '), ('all-MiniLM-L6-v2', '', '')):
+        seen = FixtureEmbedding()
+        bank = RawTurnBank({**plan['settings'], 'embedding': embedding_settings(name)}, factory.turns, seen)
+        bank.form()
+        asyncio.run(bank.search('Rank 3', top_k=2))
+        documents, query = seen.inputs[:-1], seen.inputs[-1]
+        assert all(t.startswith(document_prefix) for t in documents) and query == query_prefix + 'Rank 3'
+        assert [t[len(document_prefix):] for t in documents] == [t['text'] for t in factory.turns.values()]
+
+
+def test_an_unpinned_encoder_keys_its_cache_by_the_commit_it_actually_uses(tmp_path, monkeypatch):
+    from memcut.raw_turn_rag import embedding
+    settings = embedding_settings('e5-small-v2')
+    assert settings['revision'] is None
+    class Encoder:
+        def encode(self, texts, **kwargs):
+            return FixtureEmbedding().encode(texts)
+    vectors = {}
+    for commit in ('commit-a', 'commit-b'):
+        monkeypatch.setattr(embedding, 'resolved_revision', lambda s, c=commit: c)
+        cache = LocalEmbeddings(settings, tmp_path)
+        cache.model = Encoder()
+        cache.encode(['passage: Rank 1'])
+        vectors[commit] = cache.computed
+    assert vectors == {'commit-a': 1, 'commit-b': 1}           # a new commit never reuses the old vectors

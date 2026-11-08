@@ -19,7 +19,7 @@ from memcut.native_memory.contract import digest
 from memcut.native_memory.persistence import write_json
 from . import PROTOCOL as NATIVE_STORAGE_PROTOCOL
 from memcut.source_anchored_v2.scoring import evaluation_protocol, ROTATION_COUNT, TRIAL_IDS
-from memcut.source_anchored_v2.candidates import build_pool, rank_leakcut, verify_pool, candidate_protocol
+from memcut.source_anchored_v2.candidates import build_pool, rank_s2, verify_pool, candidate_protocol
 from memcut.source_anchored_v2.evaluation import contexts as primary_contexts, evaluate, answer_request, score_response
 from memcut.source_anchored_v2.runner import (read, sha, sealed_write, normalize_claim, stage_claims,
                                             gateway, role_cache, validate_state, report as core_report)
@@ -330,7 +330,7 @@ async def delete(folder, plan, completions, *, factory=None, claim_ids=None):
                 sealed_write(poolpath, pool)
                 rankpath = base/'S2_ORDER.json'
                 ranking = read(rankpath) if rankpath.exists() else {
-                    **rank_leakcut(pool, selector, plan['models']['selector']),
+                    **rank_s2(pool, selector, plan['models']['selector']),
                     'pool_sha256':pool['pool_sha256'], 'plan_sha256':digest(plan)}
                 if ranking.get('pool_sha256')!=pool['pool_sha256'] or ranking.get('plan_sha256')!=digest(plan):
                     raise ValueError('Saved S2 ordering belongs to another pool or plan')

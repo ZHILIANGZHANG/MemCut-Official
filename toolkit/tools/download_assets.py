@@ -1,6 +1,7 @@
 """Explicit download of pinned public assets; never loads a model or calls an LLM."""
 import argparse
 import hashlib
+import json
 import os
 from pathlib import Path
 import sys
@@ -40,19 +41,23 @@ def main():
     parser.add_argument('--cache', type=Path,
                         default=Path(os.environ.get('TIKTOKEN_CACHE_DIR', ROOT/'runtime/tiktoken')),
                         help='Coverage tokenizer cache only; models use standard HF_HOME')
+    parser.add_argument('--embedding', choices=['e5-small-v2', 'all-MiniLM-L6-v2'],
+                        help='encoder only: download this retrieval encoder (default: both)')
     args = parser.parse_args()
     if args.asset == 'coverage':
         print(coverage(args.cache))
     else:
         from huggingface_hub import snapshot_download
-        models = {
-            'encoder': ('sentence-transformers/all-MiniLM-L6-v2',
-                        '1110a243fdf4706b3f48f1d95db1a4f5529b4d41'),
-            'lightmem-compressor': ('microsoft/llmlingua-2-bert-base-multilingual-cased-meetingbank',
-                                   '5f0c82792b7ea14c6484e015b6a072009496b7f2'),
-        }
-        model, revision = models[args.asset]
-        print(snapshot_download(model, revision=revision))
+        if args.asset == 'encoder':      # every registered retrieval encoder, or the one --embedding names
+            registry = json.loads((ROOT/'configs/embeddings.json').read_text())
+            for name in ([args.embedding] if args.embedding else sorted(registry)):
+                entry = registry[name]
+                path = snapshot_download(entry['model'], revision=entry['revision'])
+                print(json.dumps({'embedding': name, 'model': entry['model'], 'revision': Path(path).name,
+                                  'path': path}))
+            return
+        print(snapshot_download('microsoft/llmlingua-2-bert-base-multilingual-cased-meetingbank',
+                                revision='5f0c82792b7ea14c6484e015b6a072009496b7f2'))
 
 
 if __name__ == '__main__':

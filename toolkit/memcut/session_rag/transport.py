@@ -20,6 +20,7 @@ from memcut.execution_optimization.receipts import ReuseCache
 from memcut.model_adapters import glm, qwen
 from memcut.native_memory.contract import digest
 from memcut.source_anchored_v2.completions import CachedCompletions
+from memcut.source_anchored_v2.candidates import S2_PROMPT_PREFIX
 
 
 RETRY_HEADER = 'X-MemCut-Session-Retry'
@@ -141,7 +142,7 @@ def _validate_prompt(role, request):
     if not isinstance(messages, list) or not messages:
         raise ValueError('Missing request messages')
     prompt = messages[0].get('content', '')
-    prefix = {'answer': 'Answer the multiple-choice question', 'selector': 'Rank candidate source groups'}
+    prefix = {'answer': 'Answer the multiple-choice question', 'selector': S2_PROMPT_PREFIX}
     if role in prefix and not prompt.startswith(prefix[role]):
         raise ValueError('Unrecognized frozen QA/selector schema')
     # Validate local schema metadata before a dispatch: a broken prompt must

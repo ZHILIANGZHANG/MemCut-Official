@@ -3,19 +3,22 @@
 A benchmark for **memory unlearning** in long-term agent memory: a user asks the assistant to forget one thing, and
 the question is whether the thing stays derivable from what the memory still holds.
 
-Release `memcut-public-v1`, created 2026-11-08, content id `5ba89f004ddd`. Main set: 15 episodes, 490 sessions,
+Release `memcut-public-v1`, created 2026-11-08, content id `1ec35ef543ff`. Main set: 15 episodes, 490 sessions,
 43,402 messages, 456 deletion requests. One case-study episode, EP08A, is described below and counted apart.
 
 ## What is in an episode
 
-Each episode is a long user–assistant history (26–40 sessions, about 2,000–3,700 messages) in a fictional
+Each episode is a long user–assistant history (26–36 sessions, 2,136–3,472 messages) in a fictional
 setting, written by the benchmark authors. Each of its claims is a fact the user later asks the assistant to forget:
 
 - **The target** (`claim`): the sentence that must become underivable.
-- **The disclosure** (`direct_record_ids`): the one or two messages that state the target outright. Every evaluated
+- **The disclosure** (`direct_record_ids`): the message that states the target outright. Every evaluated
   system has them deleted first (step S0), so the benchmark measures what happens *after* the obvious record is gone.
 - **The evidence** (`carriers`): 6–10 ordinary messages, spread over 5–10 sessions, from which the target can still
   be derived once the disclosure is gone. No single message and no single session suffices.
+- **The minimal sufficient sets**: every smallest combination of evidence messages that still yields the target
+  (2–5 messages each, 15.7 per fact on average, 7,148 in all), and the minimum cut: the fewest evidence messages
+  whose deletion breaks every set (2–5).
 - **The distractors**: near-miss messages that look relevant and are not evidence.
 - **The readout**: a five-option multiple-choice question with one option stating the target and one
   "insufficient information" option, asked under two display orders.
@@ -43,7 +46,8 @@ data/EPxx/public/EPxx.json           the dialogue (the only thing a memory syste
 data/EPxx/author/CLAIM_CONTRACTS.json  targets, requests, questions, options, display orders
 data/EPxx/author/ANNOTATIONS.json      evidence carriers, disclosures, distractors (record ids + text hashes)
 data/EPxx/author/TOKEN_COUNTS.json     token counts of the dialogue
-data/EP01/author/SUPPORT_PATHS.json, PATH_COMBINATION_AUDIT.json   minimal sufficient evidence sets (EP01, EP08A)
+data/EPxx/author/SUPPORT_PATHS.json   minimal sufficient evidence sets per fact
+data/EPxx/author/PATH_COMBINATION_AUDIT.json   the same sets with every minimum cut
 data/EP08A/...                       the case-study episode (same layout)
 ```
 

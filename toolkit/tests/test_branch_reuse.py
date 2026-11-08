@@ -9,7 +9,7 @@ from unittest.mock import patch
 from memcut.execution_optimization import branches
 from memcut.native_memory.contract import digest
 from memcut.source_anchored_v2 import runner as core
-from memcut.source_anchored_v2.candidates import rank_leakcut
+from memcut.source_anchored_v2.candidates import rank_s2
 
 
 class BranchReuseTests(unittest.TestCase):
@@ -47,12 +47,12 @@ class BranchReuseTests(unittest.TestCase):
             def complete(self, request):
                 identity = {'endpoint': 'fixture', 'compatibility': 'openai', 'request': request}
                 rid = digest(identity)
-                text = '{"scores":[{"id":"g1","score":7,"reason":"related"}]}'
+                text = '{"scores":[{"id":"t1","score":7,"reason":"related"}]}'
                 core.write_json(source / 'requests' / rid / 'request.json', identity)
                 core.write_json(source / 'requests' / rid / 'response.json', {
                     'choices': [{'finish_reason': 'stop', 'message': {'content': text}}]})
                 return {'text': text, 'request_id': rid, 'finish_reason': 'stop'}
-        ranking = {**rank_leakcut(pool, FrozenSelector(), self.old['models']['selector']),
+        ranking = {**rank_s2(pool, FrozenSelector(), self.old['models']['selector']),
                    'pool_sha256': pool['pool_sha256'], 'plan_sha256': digest(self.old)}
         core.write_json(base / 'S2_ORDER.json', ranking)
         for condition in self.old['conditions']:
@@ -215,7 +215,7 @@ class BranchReuseTests(unittest.TestCase):
         core.write_json(path / 'NUMERIC_SCORE_NORMALIZATION.json', {
             'policy': 'selector-exact-numeric-json-string-v1', 'request_id': rid,
             'response_sha256': core.sha(path / 'response.json'),
-            'changes': [{'id': 'g1', 'before': '7', 'after': 7}]})
+            'changes': [{'id': 't1', 'before': '7', 'after': 7}]})
         catalog = branches.prepare_catalog(self.source, self.new)
         result = branches.import_claims(self.target, self.new, catalog)
         self.assertEqual(result['reused_selector_request_ids'], [rid])

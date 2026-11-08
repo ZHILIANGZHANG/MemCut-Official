@@ -18,7 +18,7 @@ Every paid stage reads its key from the environment (USAGE.md, section 3). `prep
 | Pool sweep (Figure 3a) | pool 10, 20, 30, 40, 50, 60 at budget 10; Turn RAG, MemoryBank, LightMem; DeepSeek and Qwen; EP01–EP05 | one PLAN per pool size with the staged entry points: `turnrag prepare ... --candidate-objects N --candidate-turns N --k 10`, `source prepare --system lightmem ... --candidate-objects N --candidate-turns N --k 10`; each pool is ranked afresh |
 | Budget sweep (Figure 3b) | budget 2, 4, 6, 10, 15, 20 at pool 20 | one PLAN per system with `--k 2 4 6 10 15 20`; the budgets delete prefixes of one ranking |
 | Case study (Figure 4, Appendix E) | Turn RAG, S2, pools 10 to 60, on the case-study episode EP08A | as the pool sweep, on `data/bundle/data/EP08A`; the similarity ranks of the evidence come from the `build` stage's retrieval (`turnrag trace --run <dir> --query "<deletion request>" --top-k 200`) |
-| Dataset statistics (Tables 2, 5, 6) | the bundle | the manifest, the annotations and the EP01/EP08A minimal-set files; no model call |
+| Dataset statistics (Tables 2, 5, 6) | the bundle | the manifest, the annotations and every episode's minimal-set files; no model call |
 
 Notes:
 

@@ -28,7 +28,6 @@ episode EP08A, with a data card, schema and validator) is released with this too
 | Deletion budget, 2/2 scoring, entry points and their variants | [docs/PROTOCOL.md](docs/PROTOCOL.md) |
 | The full protocol (implementation spec v4) | [PROTOCOL.md](PROTOCOL.md) |
 | The six systems' adapters and how they differ from their LoCoMo configurations | [docs/integrations/](docs/integrations/) |
-| Source files and release changes | [SOURCE_MANIFEST.json](SOURCE_MANIFEST.json) |
 | What was verified for the release | [docs/VERIFICATION.md](docs/VERIFICATION.md) |
 
 ## What it does
@@ -39,9 +38,11 @@ picks which to delete), then read out **native** (the system's own retrieval and
 from everything the evidence turns still derive). A target counts as recovered when the reader picks it under both
 display orders (2/2). `aligned-retention` then asks unrelated questions the full memory answered, after the deletion.
 
-Systems included, each through its own upstream code at a pinned commit: **MemoryBank**, **Nemori**, **LightMem**,
-**SimpleMem**, and two references, **Raw-turn RAG** and **Session RAG**. All six run through one entry point,
-`run.py aligned`, with the same failure handling and the same ledger of calls and tokens.
+Systems included, each through its own upstream code at a pinned commit: the five of the paper, **Turn RAG**
+(raw-turn RAG), **Session RAG**, **MemoryBank**, **Nemori** and **LightMem**, and an additional adapter for
+**SimpleMem**. All of them run through one entry point, `run.py aligned`, with the same failure handling and the
+same ledger of calls and tokens. Turn RAG and Session RAG take either retrieval encoder, `e5-small-v2` (default) or
+`all-MiniLM-L6-v2` (`--embedding`).
 
 ## Quick check (no model calls)
 
@@ -92,16 +93,15 @@ directory's receipts, so a rerun sends only what is missing.
 ## Release scope
 
 Source, configs, tests and docs only. The data bundle is imported on demand; models, virtual environments, upstream
-checkouts, databases, replies, results and keys are never committed. Assembling this release changed source and
-config paths, so it has a **new experiment code identity**: create new PLANs from this directory; runs frozen under
-an earlier tree cannot be resumed with it. Default parameters and scoring variants are whatever the PLAN each entry
-point writes says they are.
+checkouts, databases, replies, results and keys are never committed. Every PLAN records the code identity it was
+prepared with, and a PLAN is never resumed under a different one. Default parameters and scoring variants are
+whatever the PLAN each entry point writes says they are.
 
 ## Scope and provenance
 
-`SOURCE_MANIFEST.json` lists every file with its SHA-256 and the release scope: reusable S0/S1/S2 source and
-synthetic tests, no experiment outputs, model weights, databases, API replies or credentials. The toolkit clones the
-systems under test at setup rather than vendoring them; see `NOTICE` for their repositories and licenses.
+The toolkit holds reusable S0/S1/S2 source and synthetic tests; no experiment outputs, model weights, databases,
+API replies or credentials. It clones the systems under test at setup rather than vendoring them; see `NOTICE` for
+their repositories and licenses.
 
 ## Citation
 

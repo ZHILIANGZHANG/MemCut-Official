@@ -22,7 +22,7 @@ For example:
 python3.11 -m venv .venv-encoder
 . .venv-encoder/bin/activate
 python -m pip install -r requirements/encoder.txt
-python tools/download_assets.py encoder
+python tools/download_assets.py encoder        # both retrieval encoders; --embedding NAME for one
 export TIKTOKEN_CACHE_DIR="$PWD/runtime/tiktoken"
 python tools/download_assets.py coverage
 # LightMem only: python tools/download_assets.py lightmem-compressor
@@ -31,6 +31,19 @@ export TRANSFORMERS_OFFLINE=1
 export PYTHONHASHSEED=0
 python run.py turnrag doctor
 ```
+
+Turn RAG and Session RAG take either of two retrieval encoders, registered side by side in
+`configs/embeddings.json` and chosen at `prepare` with `--embedding`; the choice is frozen in the PLAN:
+
+| `--embedding` | Model | Input convention |
+|---|---|---|
+| `e5-small-v2` (default) | `intfloat/e5-small-v2`, 384 dimensions, 512 tokens | `query: ` before queries, `passage: ` before stored text |
+| `all-MiniLM-L6-v2` | `sentence-transformers/all-MiniLM-L6-v2`, 384 dimensions, 256 tokens | plain text |
+
+`python run.py turnrag doctor --embedding NAME` (and `sessionrag doctor`) loads the chosen encoder and prints the
+model commit in use. `all-MiniLM-L6-v2` is pinned to a commit; `e5-small-v2` uses the commit in your local Hugging
+Face cache, which the doctor prints and every cached vector is keyed by; write it into `configs/embeddings.json` to
+pin it.
 
 `setup_upstreams.py` only clones source at the pinned commit; `download_assets.py` only downloads public weights and
 tokenizer files at the pinned revision. Neither makes a model call. Download before setting the offline variables;
@@ -118,7 +131,8 @@ python run.py aligned status --run outputs/lightmem-aligned-ep01
 ```
 
 Systems: `memorybank`, `nemori`, `lightmem`, `simplemem`, and the two RAG references `turnrag` and `sessionrag`
-(their build is local encoding only; `--native-eval-k` sets how many items the native readout reads, default 16;
+(their build is local encoding only; `--embedding` picks the retrieval encoder, default `e5-small-v2`;
+`--native-eval-k` sets how many items the native readout reads, default 16;
 Session RAG measures, after S0/S1 and before any paid request, how much of the episode its native context covers,
 and stops above 25% unless `prepare` was given `--accept-coverage` or a smaller k). `run` goes build → delete →
 answer → report, with no pilot and no separate audit stage; single stages can still be run. MemoryBank keeps QA

@@ -1,4 +1,5 @@
 """Pinned local embeddings with durable text-keyed reuse, never an API client."""
+import json
 from pathlib import Path
 import os
 import tempfile
@@ -6,6 +7,35 @@ import tempfile
 import numpy as np
 
 from memcut.native_memory.contract import digest
+
+REGISTRY = Path(__file__).resolve().parents[2] / 'configs/embeddings.json'
+DEFAULT_EMBEDDING = 'e5-small-v2'      # the paper's encoder; all-MiniLM-L6-v2 is the equal alternative
+
+
+def embedding_choices():
+    return sorted(json.loads(REGISTRY.read_text()))
+
+
+def embedding_settings(name):
+    """The frozen settings of one registered encoder, as a PLAN records them."""
+    entries = json.loads(REGISTRY.read_text())
+    if name not in entries:
+        raise ValueError(f'Unknown embedding {name!r}; choose one of {sorted(entries)}')
+    return {'name': name, **entries[name]}
+
+
+def with_prefix(settings, texts, kind):
+    """The encoder's own input convention: e5 needs 'query: ' / 'passage: '; MiniLM takes plain text."""
+    prefix = settings.get(f'{kind}_prefix', '')
+    return [prefix + t for t in texts]
+
+
+def resolved_revision(settings):
+    """The pinned commit, or for an unpinned entry the commit in the local Hugging Face cache."""
+    if settings.get('revision'):
+        return settings['revision']
+    from huggingface_hub import snapshot_download
+    return Path(snapshot_download(settings['model'], local_files_only=True)).name
 
 
 def validate_vectors(value, count, dimensions):
@@ -22,13 +52,20 @@ class LocalEmbeddings:
         self.settings = settings
         self.cache_dir = Path(cache_dir)
         self.model = None
+        self.revision = None
         self.computed = self.cache_hits = 0
+
+    def identity(self):
+        """Settings with the actual model commit: cached vectors never mix two revisions of one encoder."""
+        if self.revision is None:
+            self.revision = resolved_revision(self.settings)
+        return {**self.settings, 'revision': self.revision}
 
     def load(self):
         if self.model is None:
             from huggingface_hub import snapshot_download
             from sentence_transformers import SentenceTransformer
-            path = snapshot_download(self.settings['model'], revision=self.settings['revision'],
+            path = snapshot_download(self.settings['model'], revision=self.identity()['revision'],
                                      local_files_only=True)
             self.model = SentenceTransformer(path, device=self.settings['device'], local_files_only=True)
             self.model.max_seq_length = self.settings['max_seq_length']
@@ -43,7 +80,7 @@ class LocalEmbeddings:
         if not texts:
             return np.empty((0, dimension), dtype=np.float32)
         values, missing = {}, {}
-        keys = [digest({'embedding': self.settings, 'text': t}) for t in texts]
+        keys = [digest({'embedding': self.identity(), 'text': t}) for t in texts]
         for key, text in zip(keys, texts):
             if key in values or key in missing:
                 continue

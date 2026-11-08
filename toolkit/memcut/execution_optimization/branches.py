@@ -16,7 +16,7 @@ from memcut.native_memory.contract import digest
 from memcut.model_adapters import experiment
 from memcut.model_adapters.glm import GLMCompletions, MODEL
 from memcut.source_anchored_v2 import runner as core
-from memcut.source_anchored_v2.candidates import rank_leakcut, verify_pool
+from memcut.source_anchored_v2.candidates import rank_s2, verify_pool
 from memcut.source_anchored_v2.completions import CachedCompletions, parse_json
 from .receipts import request_identity
 
@@ -126,7 +126,7 @@ def _selector(folder, plan, pool, ranking):
                 files.append(normalized)
             return {'text': text, 'request_id': rid, 'finish_reason': 'stop', 'cached': True}
 
-    expected = rank_leakcut(pool, Frozen(), plan['models']['selector'])
+    expected = rank_s2(pool, Frozen(), plan['models']['selector'])
     if expected != {k: v for k, v in ranking.items() if k not in {'plan_sha256', 'pool_sha256'}}:
         raise ValueError('Saved selector order/scores differ from the original response')
     return files

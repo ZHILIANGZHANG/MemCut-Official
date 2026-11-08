@@ -10,10 +10,10 @@ from memcut.native_memory.persistence import write_json
 from memcut.source_anchored_systems import runner as shared
 from memcut.source_anchored_v2.runner import (read, sha, sealed_write, normalize_claim,
     stage_claims, validate_state, role_cache, gateway)
-from memcut.source_anchored_v2.candidates import build_pool, rank_leakcut, verify_pool, candidate_protocol
+from memcut.source_anchored_v2.candidates import build_pool, rank_s2, verify_pool, candidate_protocol
 from . import VERSION
 from .bank import SessionBank, DELETION_POLICY
-from memcut.raw_turn_rag.embedding import LocalEmbeddings
+from memcut.raw_turn_rag.embedding import LocalEmbeddings, DEFAULT_EMBEDDING, REGISTRY, embedding_settings
 
 ROOT = Path(__file__).resolve().parents[2]
 CONFIG = ROOT / 'configs/session_rag_v1.json'
@@ -29,7 +29,7 @@ PROTOCOL = {**copy.deepcopy(shared.PROTOCOL), 'version': VERSION + '-precise-tur
 
 
 def code_identity():
-    paths = list(Path(__file__).parent.glob('*.py')) + [CONFIG, ROOT/'tools/session_rag.py']
+    paths = list(Path(__file__).parent.glob('*.py')) + [CONFIG, REGISTRY, ROOT/'tools/session_rag.py']
     paths += [ROOT/p for p in shared.code_identity()]
     paths += [ROOT/p for p in ('memcut/raw_turn_rag/embedding.py', 'memcut/raw_turn_rag/bank.py',
         'memcut/answer_execution/early_stop.py', 'memcut/efficient_execution/recovery.py',
@@ -63,7 +63,8 @@ def load_plan(folder):
     expected = candidate_protocol(PROTOCOL, plan['protocol']['n_obj'], plan['protocol']['n_turn'])
     if plan['system'] != 'session_rag' or plan['protocol'] != expected or plan['code'] != code_identity():
         raise ValueError('Frozen implementation changed; use a new RAG run version')
-    expected_settings = {**read(CONFIG), 'native_eval_k': plan['settings']['native_eval_k']}
+    expected_settings = {**read(CONFIG), 'native_eval_k': plan['settings']['native_eval_k'],
+                         'embedding': embedding_settings(plan['settings']['embedding']['name'])}
     if plan['settings'] != expected_settings:
         raise ValueError('Frozen RAG settings differ')
     if sha(folder/'PROTOCOL.md') != plan['protocol_document_sha256']:
@@ -76,7 +77,7 @@ def load_plan(folder):
 
 def prepare(folder, *, source, contracts, annotations, answer_model, endpoint,
             selector_model=None, compatibility='openai', claim_ids=None, k_list=(10,),
-            candidate_objects=20, candidate_turns=20, native_eval_k=16,
+            candidate_objects=20, candidate_turns=20, native_eval_k=16, embedding=DEFAULT_EMBEDDING,
             controls=False, residual_plus=False, reuse_full=None,
             selector_endpoint=None, selector_compatibility=None, qa_max_tokens=1024, early_stop=True):
     if controls or residual_plus:
@@ -130,7 +131,7 @@ def prepare(folder, *, source, contracts, annotations, answer_model, endpoint,
         if sha(p) != read(p.with_suffix('.frozen.json'))['sha256']:
             raise ValueError('Reusable Full changed')
         reuse = {'path': str(p), 'sha256': sha(p)}
-    settings = {**read(CONFIG), 'native_eval_k': native_eval_k}
+    settings = {**read(CONFIG), 'native_eval_k': native_eval_k, 'embedding': embedding_settings(embedding)}
     plan = {'system': 'session_rag', 'protocol': protocol, 'settings': settings,
             'code': code_identity(), 'inputs': inputs, 'claims': claims, 'k_list': ks,
             'models': {'answer': answer_model, 'selector': selector_model or answer_model},
@@ -307,7 +308,7 @@ async def delete(folder, plan, completions=None, *, factory=None, claim_ids=None
             else:
                 if completions is None and pool['turns']:
                     raise ValueError('S2 needs a selector completion transport')
-                ranking = {**rank_leakcut(pool, role_cache(completions, 'selector'), plan['models']['selector']),
+                ranking = {**rank_s2(pool, role_cache(completions, 'selector'), plan['models']['selector']),
                     'pool_sha256': pool['pool_sha256'], 'plan_sha256': digest(plan)}
             if ranking['pool_sha256'] != pool['pool_sha256'] or ranking['plan_sha256'] != digest(plan):
                 raise ValueError('S2 ranking belongs to another pool or plan')
@@ -446,7 +447,7 @@ def report(folder, plan):
             result['metrics'][family+'-'+condition]['all_claims_reached_requested_budget'] = (
                 len(receipts)==len(plan['claims']) and all(r['budget_complete'] for r in receipts))
     if 'S2@10' in plan['conditions']:
-        result['named_metrics'] = {f+'-leakcut':result['metrics'][f+'-S2@10'] for f in ('native','residual')}
+        result['named_metrics'] = {f+'-S2':result['metrics'][f+'-S2@10'] for f in ('native','residual')}
     # Category counts come only from pre-frozen labels, never model outcomes.
     categories = {}
     for category in sorted({str(c['category']) for c in plan['claims']}):
@@ -532,11 +533,11 @@ async def audit(folder, plan, *, factory=None, require_complete=True, verify_api
                     captured.append(request)
                     if verify_api:
                         return verify_receipt(folder,plan,'selector',request,rank['request_id'])
-                    payload, groups=selector_input(pool)
+                    payload, candidates=selector_input(pool)
                     scores={r['turn_id']:r for r in rank['scores']}
-                    return {'text':json.dumps({'scores':[{'id':g['group'],'score':scores[g['turn_ids'][0]]['llm_score'],
-                        'reason':scores[g['turn_ids'][0]]['llm_reason']} for g in groups]}),'request_id':rank['request_id']}
-            rerank=rank_leakcut(pool,Reader(),plan['models']['selector'])
+                    return {'text':json.dumps({'scores':[{'id':c['id'],'score':scores[c['turn_id']]['llm_score'],
+                        'reason':scores[c['turn_id']]['llm_reason']} for c in candidates]}),'request_id':rank['request_id']}
+            rerank=rank_s2(pool,Reader(),plan['models']['selector'])
             if any(rank[k]!=v for k,v in rerank.items()):
                 raise ValueError('S2 ranking disagrees with provider receipt')
         for condition in plan['conditions']:

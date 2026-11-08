@@ -11,13 +11,10 @@ results and not an independent audit of experiments.
   and an evidence test that depends on unreleased historical outputs. None of them is counted as passed.
 - The nine command entry points print their help from any working directory; without a stage argument nothing
   starts.
-- Importing the real 15-episode bundle succeeded: 15 episodes, 60 data files; `prepare` on the imported EP01 gave
-  28 claims, QA k=16, 0 API requests.
+- Importing the real bundle succeeded: 15 main-set episodes and the case-study episode EP08A; `prepare` on the
+  imported EP01 gave 28 claims, QA k=16, 0 API requests.
 - The synthetic import tests cover a hash mismatch, a path outside the destination, a duplicate episode and a
   refusal to overwrite an existing directory.
-- The 95 source files selected from the working tree hash the same as when extracted; the changes made in the
-  release copy are listed in `SOURCE_MANIFEST.json`. The extracted LightMem rendering function is AST-identical to
-  the original.
 - Local Markdown links resolve and Python files parse; no absolute local paths and no common key patterns were
   found. The directory contains no data, replies, banks, models or virtual environments.
 

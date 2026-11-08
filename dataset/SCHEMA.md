@@ -13,7 +13,7 @@ be shown to the system under test.
 | `registry_sha256` | the bundle's content id: SHA-256 over every file's SHA-256 in episode order |
 | `totals` | the main set only (EP01–EP15) |
 | `case_study_totals` | the case-study episodes, when present |
-| `episodes[]` | `id`, `world` (a one-line fictional setting), `sessions`, `turns`, `claims`, `files{kind: {path, sha256, bytes}}` with kinds `source`, `contracts`, `annotations`, `tokens`, and for EP01 and case-study episodes `support_paths`, `path_audit`; a case-study episode also has `set: "case_study"` and `base_episode` (an entry without `set` is in the main set) |
+| `episodes[]` | `id`, `world` (a one-line fictional setting), `sessions`, `turns`, `claims`, `files{kind: {path, sha256, bytes}}` with kinds `source`, `contracts`, `annotations`, `tokens`, `support_paths`, `path_audit`; a case-study episode also has `set: "case_study"` and `base_episode` (an entry without `set` is in the main set) |
 
 ## `public/EPxx.json` (the dialogue)
 
@@ -57,8 +57,12 @@ timeline's session times; relative dates in the text ("last Tuesday") resolve ag
 
 Token counts of the dialogue text under `cl100k_base` and `o200k_base`, and message counts.
 
-## EP01 and case-study episodes: `author/SUPPORT_PATHS.json`, `author/PATH_COMBINATION_AUDIT.json`
+## `author/SUPPORT_PATHS.json`, `author/PATH_COMBINATION_AUDIT.json`
 
-The authors' enumeration of minimal sufficient evidence sets per claim (`minimal_source_combinations`, lists of
-carrier keys), the minimum hitting set size (`minimum_hitting_set_size_in_audited_family`) and the fact-coverage
-method used to enumerate them. Offline analyses of deletion mechanisms read these; the readout protocol does not.
+Every episode carries both. `SUPPORT_PATHS.json` lists, per claim, the minimal sufficient evidence sets as
+`witnesses` (`keys`: carrier keys, `record_ids`: their turns): each set yields the target, and no member can be
+dropped. `PATH_COMBINATION_AUDIT.json` repeats the sets as `minimal_source_combinations` and adds the minimum cut:
+its size (`minimum_hitting_set_size_in_audited_family`), one cut (`one_minimum_hitting_set`) and every cut of that
+size (`all_minimum_hitting_sets`), plus `source_key_to_record_id`. A cut is per claim: the fewest evidence turns
+whose deletion leaves no set intact. The readout protocol does not read these files; analyses of deletion
+mechanisms do.

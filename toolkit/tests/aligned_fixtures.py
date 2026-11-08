@@ -54,7 +54,7 @@ def response(**request):
         content = {'assessment': 'complete', 'reasoning': 'Fixture complete.', 'coverage_percentage': 100}
     elif 'missing information query generator' in system:
         content = {'targeted_queries': ['item82'], 'missing_analysis': 'One gap.'}
-    elif 'Rank candidate source groups' in system:
+    elif 'Score candidate turns for a targeted memory deletion' in system:
         payload = json.loads(body)
         assert set(payload) == {'deletion_request','objects','candidates'}
         content = {'scores': [{'id': row['id'], 'score': 10*i/max(1,len(payload['candidates'])-1),

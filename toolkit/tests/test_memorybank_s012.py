@@ -31,7 +31,7 @@ from memcut.source_anchored_v2.provenance import diff_objects
 
 from memcut.source_anchored_v2.completions import CachedCompletions, native_summary_request
 
-from memcut.source_anchored_v2.candidates import build_pool, selector_input, rank_leakcut
+from memcut.source_anchored_v2.candidates import build_pool, selector_input, rank_s2
 
 from memcut.source_anchored_v2.evaluation import contexts, evaluate, summarize, score_response
 

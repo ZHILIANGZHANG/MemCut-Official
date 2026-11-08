@@ -5,7 +5,7 @@ from pathlib import Path
 
 from memcut.native_memory.contract import digest
 from memcut.source_anchored_v2 import evaluation
-from memcut.source_anchored_v2.candidates import build_pool, rank_leakcut, verify_pool
+from memcut.source_anchored_v2.candidates import build_pool, rank_s2, verify_pool
 from memcut.execution_optimization.receipts import request_identity
 from . import runner
 from .formation import extraction_request, parse_entries
@@ -88,7 +88,7 @@ async def run(folder, plan, *, factory=None, completions=None):
             pool = runner.read(root/'POOL.json')
             order = runner.read(root/'S2_ORDER.json')
             verify_pool(pool)
-            expected_order = rank_leakcut(pool, cache_gateway.for_role('selector'), plan['models']['selector'])
+            expected_order = rank_s2(pool, cache_gateway.for_role('selector'), plan['models']['selector'])
             require(expected_order == {k: v for k, v in order.items() if k not in ('pool_sha256','plan_sha256')},
                     'S2 ordering differs from the original response')
             require(order['pool_sha256'] == pool['pool_sha256'] and order['plan_sha256'] == digest(plan), 'S2 binding changed')

@@ -10,10 +10,10 @@ from memcut.native_memory.persistence import write_json
 from memcut.source_anchored_systems import runner as shared
 from memcut.source_anchored_v2.runner import (read, sha, sealed_write, normalize_claim,
     stage_claims, validate_state, role_cache, gateway)
-from memcut.source_anchored_v2.candidates import build_pool, rank_leakcut, verify_pool, candidate_protocol
+from memcut.source_anchored_v2.candidates import build_pool, rank_s2, verify_pool, candidate_protocol
 from . import VERSION
 from .bank import RawTurnBank
-from .embedding import LocalEmbeddings
+from .embedding import LocalEmbeddings, DEFAULT_EMBEDDING, REGISTRY, embedding_settings
 
 ROOT = Path(__file__).resolve().parents[2]
 CONFIG = ROOT / 'configs/raw_turn_rag_v1.json'
@@ -25,7 +25,7 @@ PROTOCOL = {**copy.deepcopy(shared.PROTOCOL), 'version': VERSION + '-whole-objec
 
 
 def code_identity():
-    paths = list(Path(__file__).parent.glob('*.py')) + [CONFIG, ROOT/'tools/raw_turn_rag.py']
+    paths = list(Path(__file__).parent.glob('*.py')) + [CONFIG, REGISTRY, ROOT/'tools/raw_turn_rag.py']
     # Freeze every reused implementation without adding files to old globbed packages.
     paths += [ROOT/p for p in shared.code_identity()]
     return {str(p.relative_to(ROOT)): sha(p) for p in sorted(set(paths))}
@@ -47,7 +47,8 @@ def load_plan(folder):
     expected = candidate_protocol(PROTOCOL, plan['protocol']['n_obj'], plan['protocol']['n_turn'])
     if plan['system'] != 'raw_turn_rag' or plan['protocol'] != expected or plan['code'] != code_identity():
         raise ValueError('Frozen implementation changed; use a new RAG run version')
-    expected_settings = {**read(CONFIG), 'native_eval_k': plan['settings']['native_eval_k']}
+    expected_settings = {**read(CONFIG), 'native_eval_k': plan['settings']['native_eval_k'],
+                         'embedding': embedding_settings(plan['settings']['embedding']['name'])}
     if plan['settings'] != expected_settings:
         raise ValueError('Frozen RAG settings differ')
     if sha(folder/'PROTOCOL.md') != plan['protocol_document_sha256']:
@@ -60,7 +61,7 @@ def load_plan(folder):
 
 def prepare(folder, *, source, contracts, annotations, answer_model, endpoint,
             selector_model=None, compatibility='openai', claim_ids=None, k_list=(10,),
-            candidate_objects=20, candidate_turns=20, native_eval_k=16,
+            candidate_objects=20, candidate_turns=20, native_eval_k=16, embedding=DEFAULT_EMBEDDING,
             controls=False, residual_plus=False, reuse_full=None,
             selector_endpoint=None, selector_compatibility=None):
     if type(native_eval_k) is not int or native_eval_k <= 0:
@@ -110,7 +111,7 @@ def prepare(folder, *, source, contracts, annotations, answer_model, endpoint,
         if sha(p) != read(p.with_suffix('.frozen.json'))['sha256']:
             raise ValueError('Reusable Full changed')
         reuse = {'path': str(p), 'sha256': sha(p)}
-    settings = {**read(CONFIG), 'native_eval_k': native_eval_k}
+    settings = {**read(CONFIG), 'native_eval_k': native_eval_k, 'embedding': embedding_settings(embedding)}
     plan = {'system': 'raw_turn_rag', 'protocol': protocol, 'settings': settings,
             'code': code_identity(), 'inputs': inputs, 'claims': claims, 'k_list': ks,
             'models': {'answer': answer_model, 'selector': selector_model or answer_model},
@@ -244,7 +245,7 @@ async def delete(folder, plan, completions=None, *, factory=None, claim_ids=None
             else:
                 if completions is None and pool['turns']:
                     raise ValueError('S2 needs a selector completion transport')
-                ranking = {**rank_leakcut(pool, role_cache(completions, 'selector'), plan['models']['selector']),
+                ranking = {**rank_s2(pool, role_cache(completions, 'selector'), plan['models']['selector']),
                     'pool_sha256': pool['pool_sha256'], 'plan_sha256': digest(plan)}
             if ranking['pool_sha256'] != pool['pool_sha256'] or ranking['plan_sha256'] != digest(plan):
                 raise ValueError('S2 ranking belongs to another pool or plan')

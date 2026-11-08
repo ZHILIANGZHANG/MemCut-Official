@@ -2,16 +2,6 @@
   "system": "session_rag",
   "source_policy": "exact-live-session-turn-membership-v1",
   "representation": "whole sessions of unmodified original single-role turn text",
-  "embedding": {
-    "model": "sentence-transformers/all-MiniLM-L6-v2",
-    "revision": "1110a243fdf4706b3f48f1d95db1a4f5529b4d41",
-    "dimensions": 384,
-    "max_seq_length": 256,
-    "normalize_embeddings": true,
-    "device": "cpu",
-    "dtype": "float32",
-    "batch_size": 64
-  },
   "retrieval": "max chunk cosine per unique live session; float64 accumulation; ties original session order",
   "score_accumulation": "float64; deterministic dot product of float32 normalized vectors",
   "native_eval_k": 16,
@@ -23,5 +13,6 @@
   "chunking": "greedy_turn_boundary_rechunk_affected_session_v1",
   "coverage_encoding": "cl100k_base",
   "candidate_turn_encoding": "same raw whole-turn embedding and max_seq_length truncation as Turn RAG; logged",
-  "deletion_policy": "remove complete selected turn bodies; locally rechunk affected sessions; no LLM"
+  "deletion_policy": "remove complete selected turn bodies; locally rechunk affected sessions; no LLM",
+  "embedding": "chosen at prepare from configs/embeddings.json (--embedding)"
 }

@@ -5,7 +5,7 @@ import re
 from pathlib import Path
 from memcut.native_memory.contract import digest
 from memcut.source_anchored_v2 import runner as core, evaluation
-from memcut.source_anchored_v2.candidates import rank_leakcut
+from memcut.source_anchored_v2.candidates import rank_s2
 from memcut.source_anchored_v2.completions import parse_json
 from memcut.model_adapters.glm import MODEL, GLMCompletions
 from memcut.source_anchored_v2.completions import CachedCompletions
@@ -79,7 +79,7 @@ def selector_receipts(folder, plan, pool, ranking):
                 if isinstance(val,str) and re.fullmatch(r'(?:0|[1-9][0-9]*)(?:\.[0-9]+)?',val) and 0<=float(val)<=10:
                     row['score']=float(val)
             return {**response,'text':json.dumps(parsed,ensure_ascii=False)}
-    expected=rank_leakcut(pool,Replay(),plan['models']['selector'])
+    expected=rank_s2(pool,Replay(),plan['models']['selector'])
     if expected!={k:v for k,v in ranking.items() if k not in {'plan_sha256','pool_sha256'}}:
         raise ValueError('Inherited selector scores or ordering disagree with its receipt')
     return files

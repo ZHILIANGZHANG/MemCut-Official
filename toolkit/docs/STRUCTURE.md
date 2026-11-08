@@ -24,8 +24,7 @@ memcut_eval/
 ├── requirements/                  # per-environment dependency files
 ├── tests/                         # synthetic fixtures and zero-API functional tests
 ├── docs/                          # install, reproduce, adding a system, adding data, protocol
-├── CITATION.cff  CONTRIBUTING.md
-└── SOURCE_MANIFEST.json           # source hashes and release-copy hashes
+└── CITATION.cff  CONTRIBUTING.md
 ```
 
 The runtime directories `data/`, `runtime/`, `outputs/` and `.venv*` are ignored by Git. Import the data bundle to

@@ -7,7 +7,7 @@ import numpy as np
 from memcut.native_memory.contract import SearchResult, digest
 from memcut.source_anchored_systems.base import SourceBank, SourceObject
 from memcut.source_anchored_v2.whole_object_deletion import POLICY
-from .embedding import validate_vectors
+from .embedding import validate_vectors, with_prefix
 
 
 class RawTurnBank(SourceBank):
@@ -40,7 +40,8 @@ class RawTurnBank(SourceBank):
     def form(self):
         if self.rows or self.frozen or self.progress['stage'] != 'NEW':
             raise ValueError('Formation requires a new empty bank')
-        vectors = validate_vectors(self.embedder.encode([t['text'] for t in self.turns.values()]),
+        texts = with_prefix(self.settings['embedding'], [t['text'] for t in self.turns.values()], 'document')
+        vectors = validate_vectors(self.embedder.encode(texts),
                                    len(self.turns), self.settings['embedding']['dimensions'])
         rows, writes = {}, {}
         for (tid, turn), vector in zip(self.turns.items(), vectors):
@@ -57,7 +58,8 @@ class RawTurnBank(SourceBank):
             raise ValueError('top_k must be positive')
         ids = list(self.rows)
         if ids:
-            q = validate_vectors(self.embedder.encode([query]), 1, self.settings['embedding']['dimensions'])[0]
+            q = validate_vectors(self.embedder.encode(with_prefix(self.settings['embedding'], [query], 'query')), 1,
+                                 self.settings['embedding']['dimensions'])[0]
             matrix = np.asarray([self.rows[oid]['vector'] for oid in ids], dtype=np.float32)
             # Avoid platform BLAS floating-point flags; accumulate deterministically.
             scores = np.einsum('ij,j->i', matrix, q, dtype=np.float64, optimize=False)

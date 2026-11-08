@@ -1,0 +1,27 @@
+{
+  "e5-small-v2": {
+    "model": "intfloat/e5-small-v2",
+    "revision": null,
+    "revision_policy": "the commit in the local Hugging Face cache, resolved at first use and keyed into every cached vector; set a commit here to pin it",
+    "dimensions": 384,
+    "max_seq_length": 512,
+    "query_prefix": "query: ",
+    "document_prefix": "passage: ",
+    "normalize_embeddings": true,
+    "device": "cpu",
+    "dtype": "float32",
+    "batch_size": 64
+  },
+  "all-MiniLM-L6-v2": {
+    "model": "sentence-transformers/all-MiniLM-L6-v2",
+    "revision": "1110a243fdf4706b3f48f1d95db1a4f5529b4d41",
+    "dimensions": 384,
+    "max_seq_length": 256,
+    "query_prefix": "",
+    "document_prefix": "",
+    "normalize_embeddings": true,
+    "device": "cpu",
+    "dtype": "float32",
+    "batch_size": 64
+  }
+}

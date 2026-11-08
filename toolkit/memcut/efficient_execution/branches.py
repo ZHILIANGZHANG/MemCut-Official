@@ -16,7 +16,7 @@ from memcut.native_memory.contract import digest
 from memcut.model_adapters import experiment
 from memcut.model_adapters.glm import GLMCompletions, MODEL
 from memcut.source_anchored_v2 import runner as core
-from memcut.source_anchored_v2.candidates import rank_leakcut, verify_pool
+from memcut.source_anchored_v2.candidates import rank_s2, verify_pool
 from memcut.source_anchored_v2.completions import CachedCompletions, parse_json
 from memcut.execution_optimization.receipts import request_identity
 

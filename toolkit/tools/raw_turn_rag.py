@@ -15,7 +15,8 @@ from memcut.raw_turn_rag import runner
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest='command', required=True)
-    sub.add_parser('doctor', help='Load the cached local encoder and check its output; no API')
+    doctor = sub.add_parser('doctor', help='Load the cached local encoder and check its output; no API')
+    doctor.add_argument('--embedding', choices=['e5-small-v2', 'all-MiniLM-L6-v2'], default='e5-small-v2')
     prep = sub.add_parser('prepare', help='Freeze inputs and evaluation settings; no API')
     for name in ('output', 'source', 'contracts', 'annotations', 'answer-model', 'endpoint'):
         prep.add_argument('--'+name, required=True)
@@ -28,6 +29,8 @@ def main():
     prep.add_argument('--candidate-objects', type=int, default=20)
     prep.add_argument('--candidate-turns', type=int, default=20)
     prep.add_argument('--native-eval-k', type=int, default=16)
+    prep.add_argument('--embedding', choices=['e5-small-v2', 'all-MiniLM-L6-v2'], default='e5-small-v2',
+                      help='retrieval encoder (configs/embeddings.json); default e5-small-v2')
     prep.add_argument('--controls', action='store_true')
     prep.add_argument('--residual-plus', action='store_true')
     prep.add_argument('--reuse-full')
@@ -52,12 +55,12 @@ def main():
             choice.add_argument('--query')
     args = parser.parse_args()
     if args.command == 'doctor':
-        from memcut.raw_turn_rag.embedding import LocalEmbeddings
-        settings = runner.read(runner.CONFIG)
+        from memcut.raw_turn_rag.embedding import LocalEmbeddings, embedding_settings
+        settings = {'embedding': embedding_settings(args.embedding)}
         embedder = LocalEmbeddings(settings['embedding'], runner.ROOT/'runtime/raw-turn-rag/embeddings')
         with redirect_stdout(sys.stderr):
             vectors = embedder.encode(['Raw-turn RAG local encoder check.'])
-        print(json.dumps({'system': 'raw_turn_rag', 'embedding': settings['embedding'],
+        print(json.dumps({'system': 'raw_turn_rag', 'embedding': embedder.identity(),
                           'vector_shape': list(vectors.shape), 'api_calls': 0}))
         return
     if args.command == 'prepare':

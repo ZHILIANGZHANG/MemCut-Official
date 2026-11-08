@@ -7,6 +7,7 @@ from memcut.native_memory.contract import digest
 from memcut.source_anchored_v2 import runner as core
 from memcut.source_anchored_v2.completions import parse_json
 from .replay import request_identity
+from memcut.source_anchored_v2.candidates import S2_PROMPT_PREFIX
 
 POLICY={'version':'received-invalid-same-body-v1','maximum_extra_attempts':2,
         'connection_extra_attempts':1,'budget_increases':False,'prompt_changes':False,
@@ -16,7 +17,7 @@ POLICY={'version':'received-invalid-same-body-v1','maximum_extra_attempts':2,
 def validate(request,response):
     prompt=request['messages'][0]['content']
     parsed=parse_json(response['text'])
-    if prompt.startswith('Rank candidate source groups'):
+    if prompt.startswith(S2_PROMPT_PREFIX):
         payload=json.loads(request['messages'][-1]['content']);ids={g['id'] for g in payload['candidates']}
         rows=parsed.get('scores'); seen=set()
         if not isinstance(rows,list):raise ValueError('Missing scores')
@@ -53,7 +54,7 @@ class RecoveryCache:
     def before_dispatch(self,value):self.delegate.before_dispatch=value
     def complete(self,request,**kwargs):
         prompt=request.get('messages',[{}])[0].get('content','')
-        if not prompt.startswith(('Answer the multiple-choice question','Rank candidate source groups')):
+        if not prompt.startswith(('Answer the multiple-choice question',S2_PROMPT_PREFIX)):
             return self.delegate.complete(request,**kwargs)
         origin=digest(request_identity(self.delegate,request)); failed=[];limit=2
         for attempt in range(3):

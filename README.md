@@ -29,8 +29,8 @@ including from ordinary messages that never state it.
 |:---:|:---:|:---:|:---:|:---:|
 | 15 | 490 | 43,402 | 456 | 4 |
 
-Each fact comes with its disclosure, the evidence messages it can be derived from, look-alike distractors and a
-five-option readout question. The four derivation types are factual composition, relational linking, aggregation
+Each fact comes with its disclosure, the evidence messages it can be derived from, its minimal sufficient evidence
+sets and minimum cuts, look-alike distractors and a five-option readout question. The four derivation types are factual composition, relational linking, aggregation
 and temporal state.
 
 ## What MemCut measures
@@ -41,8 +41,10 @@ and temporal state.
 - **Retention**: unrelated facts the full memory answered that are still answered after the deletion.
 
 Deletion runs through three reference baselines: **S0** deletes the disclosure, **S1** adds retrieval-ranked cleanup
-and **S2** adds LLM-guided cleanup over the same candidate pool. The toolkit ships adapters for **Turn RAG**,
-**Session RAG**, **MemoryBank**, **Nemori**, **LightMem** and **SimpleMem**, each running its own upstream code.
+and **S2** adds LLM-guided cleanup over the same candidate pool. The toolkit runs the paper's five memory designs,
+**Turn RAG**, **Session RAG**, **MemoryBank**, **Nemori** and **LightMem**, each through its own upstream code, and
+also includes an adapter for **SimpleMem**. Turn RAG and Session RAG work with either `e5-small-v2` or
+`all-MiniLM-L6-v2` as the retrieval encoder.
 
 ## Repository layout
 

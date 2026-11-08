@@ -184,11 +184,11 @@ Notes:
 |---|---|---|
 | S0 | D_c | — |
 | S1 | D_c ∪ first k of pool | by cand.score |
-| S2 (LeakCut) | D_c ∪ first k of pool | the LLM scores each turn in the pool 0–10; input = deletion_request + that turn's exposed_objs; score and reason are recorded |
+| S2 (LLM-guided cleanup) | D_c ∪ first k of pool | the LLM scores each turn in the pool 0–10 for relevance to the deletion request; input = deletion_request + the stored text the system exposes for that turn; score and reason are recorded |
 
 There are only these three strategies. S1 and S2 each rank once; different k take prefixes.
 
-LeakCut (S2) is positioned as a diagnostic deletion baseline: under the same memory system, the same model, the same candidate pool and deletion budget, its two-readout recovery rates are compared with the native ranking S1 to observe the difference the selection strategy makes. It is not required to eliminate all residue, nor to beat S1 on both readouts at once; both readouts are reported as they are. A pilot on the Nemori 40-candidate setting observed such a difference; that subset result does not replace the full main-table experiment.
+S2 (LLM-guided cleanup) is positioned as a diagnostic deletion baseline: under the same memory system, the same model, the same candidate pool and deletion budget, its two-readout recovery rates are compared with the native ranking S1 to observe the difference the selection strategy makes. It is not required to eliminate all residue, nor to beat S1 on both readouts at once; both readouts are reported as they are.
 
 ### 4.4 Execution flow per claim
 ```
@@ -250,7 +250,7 @@ Rules:
 - Do not feed objects derived from distractor turns
 Meaning: whether the remaining memory can in principle still support recovery, with retrieval factored out.
 
-### 5.4 Residual+ (appendix sensitivity check)
+### 5.4 Residual+ (optional sensitivity check)
 ```
 extra = ∪_{t ∈ E_c} search(turn_text(t), 3)   # retrieve with the original evidence text
 R_plus = R ∪ extra
@@ -310,7 +310,7 @@ System-specific notes:
 
 ---
 
-## 8. Pilot acceptance (pass all of these on one system and one episode first)
+## 8. Acceptance checks for a new integration (pass all of these on one system and one episode first)
 1. Provenance spot check: 30 random objects, src confirmed by hand; no invariant assertion fails at any point
 2. Whole-deletion correctness: all objects in the derived closure disappear, the text and sources of the other objects are unchanged; the number of LLM calls during deletion is 0; storage and index are consistent.
 3. Encoding rate: Full-row residual ≥ 70%, otherwise find out which kind of reasoning is being lost
@@ -320,7 +320,7 @@ System-specific notes:
 
 ---
 
-## 9. Cost (one system, one write model, 420 claims)
+## 9. Cost (one system, one write model, 456 claims)
 - Store construction: normal ingestion cost, zero extra for diffing
 - Per claim: executing S0/S1/S2 deletions makes 0 LLM calls; S2 ranks at most 20 candidate turns; each condition makes 2 answers per readout (a structurally empty residual makes no model request).
-- 8 k points ≈ 420 × (20 + 8×3 + 8×6) ≈ 40k calls
+- 8 k points ≈ 456 × (20 + 8×3 + 8×6) ≈ 42k calls

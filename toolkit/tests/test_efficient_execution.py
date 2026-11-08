@@ -95,7 +95,7 @@ class EfficientTests(unittest.TestCase):
             q['settings']['native_eval_k']=2;self.assertNotEqual(branches._binding(p),branches._binding(q))
 
     def test_selector_missing_ids_retried_without_candidate_change(self):
-        request={'model':'fixture','messages':[{'role':'system','content':'Rank candidate source groups'}, {'role':'user','content':json.dumps({'candidates':[{'id':'g1'},{'id':'g2'}]})}]}
+        request={'model':'fixture','messages':[{'role':'system','content':'Score candidate turns for a targeted memory deletion'}, {'role':'user','content':json.dumps({'candidates':[{'id':'g1'},{'id':'g2'}]})}]}
         calls=[]
         with tempfile.TemporaryDirectory() as td:
             def create(**kw):

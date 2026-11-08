@@ -2,20 +2,11 @@
   "system": "raw_turn_rag",
   "source_policy": "raw-turn-identity-v1",
   "representation": "one original single-role turn per object; stored text unchanged",
-  "embedding": {
-    "model": "sentence-transformers/all-MiniLM-L6-v2",
-    "revision": "1110a243fdf4706b3f48f1d95db1a4f5529b4d41",
-    "dimensions": 384,
-    "max_seq_length": 256,
-    "normalize_embeddings": true,
-    "device": "cpu",
-    "dtype": "float32",
-    "batch_size": 64
-  },
   "retrieval": "exact cosine over live normalized vectors; ties use original turn order",
   "score_accumulation": "float64; deterministic dot product of float32 normalized vectors",
   "native_eval_k": 16,
   "context": "join complete retrieved stored text with newlines, in retrieval order",
   "formation_llm_calls": 0,
-  "deletion_llm_calls": 0
+  "deletion_llm_calls": 0,
+  "embedding": "chosen at prepare from configs/embeddings.json (--embedding)"
 }

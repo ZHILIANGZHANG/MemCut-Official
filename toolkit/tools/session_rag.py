@@ -17,7 +17,8 @@ from memcut.native_memory.persistence import write_json
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     sub=parser.add_subparsers(dest='command',required=True)
-    sub.add_parser('doctor',help='Verify local pinned encoder/tokenizer and coverage assets; no API')
+    doctor=sub.add_parser('doctor',help='Verify local pinned encoder/tokenizer and coverage assets; no API')
+    doctor.add_argument('--embedding',choices=['e5-small-v2', 'all-MiniLM-L6-v2'],default='e5-small-v2')
     p=sub.add_parser('prepare',help='Freeze a new independent experiment; no API')
     p.add_argument('--output',required=True)
     p.add_argument('--from-turn-run',help='Read matching completed Turn RAG PLAN inputs and model/provider roles')
@@ -28,6 +29,7 @@ def main():
     p.add_argument('--candidate-objects',type=int,default=20)
     p.add_argument('--candidate-turns',type=int,default=20)
     p.add_argument('--native-eval-k',type=int,default=16)
+    p.add_argument('--embedding',choices=['e5-small-v2', 'all-MiniLM-L6-v2'],help='retrieval encoder (configs/embeddings.json); default e5-small-v2, or the reference Turn RAG run\'s')
     p.add_argument('--qa-max-tokens',type=int,help='Default1024; from-turn-run inherits frozen reference budget')
     p.add_argument('--always-two-trials',action='store_true')
     p.add_argument('--reuse-full')
@@ -46,14 +48,14 @@ def main():
     args=parser.parse_args()
     if args.command=='doctor':
         from memcut.session_rag.text import load_tokenizer,coverage_identity,coverage_tokens
-        from memcut.raw_turn_rag.embedding import LocalEmbeddings
-        settings=runner.read(runner.CONFIG)
+        from memcut.raw_turn_rag.embedding import LocalEmbeddings, embedding_settings
+        settings={'embedding':embedding_settings(args.embedding)}
         with redirect_stdout(sys.stderr):
             tok=load_tokenizer(settings['embedding']);encoder=LocalEmbeddings(settings['embedding'],runner.ROOT/'runtime/raw-turn-rag/embeddings')
             vectors=encoder.encode(['Session retrieval local verification.'])
             counted=coverage_tokens('Session retrieval local verification.')
         print(json.dumps({'api_calls':0,'vector_shape':list(vectors.shape),'runtime':runner.runtime_identity(),
-            'coverage_counter':coverage_identity(),'coverage_probe_tokens':counted,'embedding':settings['embedding']},ensure_ascii=False,indent=2));return
+            'coverage_counter':coverage_identity(),'coverage_probe_tokens':counted,'embedding':encoder.identity()},ensure_ascii=False,indent=2));return
     if args.command=='prepare':
         kw=vars(args).copy();kw.pop('command');folder=kw.pop('output');reference=kw.pop('from_turn_run')
         kw['claim_ids']=kw.pop('claims');kw['k_list']=kw.pop('k');always_two=kw.pop('always_two_trials');kw['early_stop']=not always_two
@@ -73,9 +75,13 @@ def main():
             inherited={'answer_model':ref['models']['answer'],'selector_model':ref['models']['selector'],
                 'endpoint':ref['providers']['answer']['endpoint'],'compatibility':ref['providers']['answer']['compatibility'],
                 'selector_endpoint':ref['providers']['selector']['endpoint'],'selector_compatibility':ref['providers']['selector']['compatibility']}
+            ref_embedding=ref['settings']['embedding']['name'] if isinstance(ref['settings'].get('embedding'),dict) else None
+            if kw['embedding'] is not None and ref_embedding and kw['embedding']!=ref_embedding:raise ValueError('Explicit embedding conflicts with Turn RAG reference')
+            kw['embedding']=kw['embedding'] or ref_embedding
             for key,value in inherited.items():
                 if kw[key] is not None and kw[key]!=value:raise ValueError('Explicit model/provider conflicts with Turn RAG reference')
                 kw[key]=value
+        kw['embedding']=kw['embedding'] or 'e5-small-v2'
         for key in ('source','contracts','annotations','answer_model','endpoint'):
             if not kw[key]:parser.error('--'+key.replace('_','-')+' or --from-turn-run is required')
         kw['compatibility']=kw['compatibility'] or 'openai'

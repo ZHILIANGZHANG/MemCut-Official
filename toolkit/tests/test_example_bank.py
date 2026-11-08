@@ -40,8 +40,8 @@ def test_the_candidate_pool_is_built_from_the_systems_own_retrieval(bank):
     request = "Forget that Fern Labs belongs to my brother."
     pool = asyncio.run(build_pool(bank, request, disclosure_turns=['t05'], n_obj=3, n_turn=4))
     assert pool['actual_objects'] == 3 and 't05' not in {r['turn_id'] for r in pool['turns']}
-    payload, groups = selector_input(pool)                      # what S2's model would see
-    assert payload['deletion_request'] == request and groups
+    payload, candidates = selector_input(pool)                  # what S2's model would see
+    assert payload['deletion_request'] == request and len(candidates) == len(pool['turns'])
 
 
 def test_deleting_a_turn_removes_every_object_derived_from_it(bank):

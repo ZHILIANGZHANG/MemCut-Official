@@ -28,7 +28,8 @@ def load_tokenizer(settings):
     """Resolve only the same cached pinned model used by LocalEmbeddings."""
     from huggingface_hub import snapshot_download
     from transformers import AutoTokenizer
-    path = snapshot_download(settings['model'], revision=settings['revision'], local_files_only=True)
+    from memcut.raw_turn_rag.embedding import resolved_revision
+    path = snapshot_download(settings['model'], revision=resolved_revision(settings), local_files_only=True)
     tokenizer = AutoTokenizer.from_pretrained(path, local_files_only=True, use_fast=True)
     # Counting must not implicitly truncate or warn at a model default; limits
     # are explicitly checked before the actual encoder receives each string.
