@@ -11,8 +11,8 @@ from memcut.source_anchored_v2 import runner as core
 
 ROOT = Path(__file__).resolve().parents[2]
 # One answer cap for the four systems: the reply is a reason plus a label, and an answer cut off at a cap is
-# unavailable, not wrong. LightMem's formally accepted QA budget is 2048 (execution_optimization/cli_core.py),
-# and so is SimpleMem's; 400 (Nemori, LightMem) and 1024 (MemoryBank) were inherited defaults.
+# unavailable, not wrong. LightMem's formally accepted QA budget is 2048,
+# 400 (Nemori, LightMem) and 1024 (MemoryBank) were inherited defaults.
 ANSWER_POLICY = {'version': 'aligned-uniform-qa2048-v2', 'max_tokens': 2048,
                  'all_systems': list(SYSTEMS), 'unusable_answer': 'unavailable readout; the stage continues'}
 TRIAL_NAMES = {'trial1': 1, 'trial2': 2, 'trial3': 3}
@@ -22,7 +22,6 @@ def runner(system):
     modules = {'memorybank': 'memcut.source_anchored_v2.runner',
                'nemori': 'memcut.source_anchored_systems.runner',
                'lightmem': 'memcut.source_anchored_systems.runner',
-               'simplemem': 'memcut.simplemem_s012.runner',
                'turnrag': 'memcut.raw_turn_rag.runner',
                'sessionrag': 'memcut.session_rag.runner'}
     return importlib.import_module(modules[system])
@@ -56,11 +55,8 @@ def native_profile(original, system):
 
 @contextmanager
 def trial_names(system, log):
-    """Contracts that name their fixed rotations "trial1"/"trial2" (EP14, EP15) prepare for every system, as
-    SimpleMem's runner already allows; each rename is logged in the plan's input_normalization."""
-    if system == 'simplemem':
-        yield
-        return
+    """Contracts that name their fixed rotations "trial1"/"trial2" prepare for every system; each rename is
+    logged in the plan's input_normalization."""
     module = runner(system)
     original = module.normalize_claim
 
@@ -96,17 +92,6 @@ def runtime(system, *, native=False):
             stack.enter_context(patch.object(core, 'evaluate', early_stop.evaluate))
             stack.enter_context(patch.object(core, 'summarize', early_stop.summarize))
             evaluate = early_stop.evaluate
-        elif system == 'simplemem':
-            from memcut.simplemem_s012 import client
-            from .simplemem import validate_result
-            original_profile = base.profile
-            @lru_cache(None)
-            def profile():
-                value = copy.deepcopy(original_profile())
-                value['settings']['memcut_alignment'] = VERSION
-                return value
-            stack.enter_context(patch.object(base, 'profile', lambda: copy.deepcopy(profile())))
-            stack.enter_context(patch.object(client, 'validate_native_result', validate_result))
         elif system in RAG:
             from .rag import stages
             stack.enter_context(stages(base, system))
@@ -128,7 +113,4 @@ def runtime(system, *, native=False):
                 return value
             stack.enter_context(patch.object(lightmem, 'native_settings', settings))
             stack.enter_context(patch.object(fast, 'FastLightMemBank', AlignedLightMemBank))
-        elif native and system == 'simplemem':
-            from .simplemem import native as simplemem_native
-            stack.enter_context(simplemem_native())
         yield base

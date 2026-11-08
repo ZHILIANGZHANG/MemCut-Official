@@ -12,8 +12,6 @@ def recipe(system):
         config = json.loads((ROOT/'configs/native_memory_profiles.json').read_text())
         return {**config['profiles']['memorybank_faiss_en']['upstream'],
                 'url': 'https://github.com/zhongwanjun/MemoryBank-SiliconFriend.git'}
-    if system == 'simplemem':
-        return json.loads((ROOT/'configs/simplemem_s012_v1.json').read_text())
     return json.loads((ROOT/'configs/source_anchored_systems_v1.json').read_text())[system]
 
 
@@ -34,7 +32,7 @@ def setup(system):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('system', choices=['memorybank', 'nemori', 'lightmem', 'simplemem'])
+    parser.add_argument('system', choices=['memorybank', 'nemori', 'lightmem'])
     setup(parser.parse_args().system)
 
 

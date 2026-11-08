@@ -3,7 +3,7 @@
 MemCut asks one thing of a memory system: after a deletion, can the forgotten fact still be recovered from what the
 memory holds? To answer it for your system, the toolkit needs to build its memory, ask it to retrieve, delete
 source turns from it, and see what it still stores. Everything else (the candidate pool, S0/S1/S2, the S2 selector,
-both readouts, 2/2 scoring, retention, caching and cost accounting) is shared code you do not write.
+both readouts, 2/2 scoring, caching and cost accounting) is shared code you do not write.
 
 The worked example is [`examples/keyword_bank.py`](../examples/keyword_bank.py): a complete system in about 100
 lines with no model and no third-party package. [`tests/test_example_bank.py`](../tests/test_example_bank.py) runs
@@ -48,20 +48,18 @@ python -m pytest -c pytest.ini tests -q
 
 ## 3. Wire it into a runner
 
-A runner turns a bank into the staged lifecycle `prepare → build → delete → answer → report`. The smallest one to
-copy is [`memcut/raw_turn_rag/runner.py`](../memcut/raw_turn_rag/runner.py) with its command line
-[`tools/raw_turn_rag.py`](../tools/raw_turn_rag.py): replace `RawTurnBank` and its `Factory` with yours and keep
-the stage functions, which call the shared candidate, deletion and evaluation code. Register the command in
-`run.py`'s `ENTRIES`.
+A runner turns a bank into the lifecycle `prepare → build → delete → answer → report`. The smallest one to copy
+is [`memcut/raw_turn_rag/runner.py`](../memcut/raw_turn_rag/runner.py): replace `RawTurnBank` and its `Factory`
+with yours and keep the stage functions, which call the shared candidate, deletion and evaluation code.
 
-To run it from the uniform `aligned` entry point instead, add the system name to `SYSTEMS` in
-`memcut/aligned_s012/__init__.py` and its runner module to `runner()` in `memcut/aligned_s012/runtime.py`. Editing
-that package changes the `aligned` code identity for every system: do it before you prepare PLANs, because a run
-prepared under the old identity is not resumed under the new one.
+Then register it with the `aligned` entry point: add the system name to `SYSTEMS` in
+`memcut/aligned_s012/__init__.py` and its runner module to `runner()` in `memcut/aligned_s012/runtime.py`, and run
+it with `python run.py aligned prepare --system <name> ...`. Editing that package changes the `aligned` code
+identity for every system: do it before you prepare PLANs, because a run prepared under the old identity is not
+resumed under the new one.
 
 ## 4. Report it
 
 Run the main setting (pool 20, budget 10) on the 15 main-set episodes, and report native and residual recovery for
-S0, S1 and S2 together with retention. State the write model, the reader and
-the system's retrieval depth. If your system needs an upstream checkout, pin its commit in
+S0, S1 and S2. State the write model and the system's retrieval depth. If your system needs an upstream checkout, pin its commit in
 `tools/setup_upstreams.py` and list it in `NOTICE`.

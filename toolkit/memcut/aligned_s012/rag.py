@@ -1,7 +1,7 @@
 """The two retrieval controls, Raw-turn RAG and Session RAG, on the aligned entry.
 
-Their frozen lifecycles stay as they are (memcut/raw_turn_rag, memcut/session_rag, tools/raw_turn_rag.py,
-tools/session_rag.py). The aligned entry runs them like the four memory systems, with its transport policy
+Their lifecycles live in memcut/raw_turn_rag and memcut/session_rag. The aligned entry runs them like the memory
+systems, with its transport policy
 (transport.py), unavailable readouts and the uniform answer cap (answers.py, runtime.ANSWER_POLICY):
 - build takes no completion transport (formation is local encoding), so the stage drops the one it is given;
 - Session RAG keeps the gate of its frozen `run` command: before any paid request it measures how much of the

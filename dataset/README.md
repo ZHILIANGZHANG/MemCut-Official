@@ -29,13 +29,13 @@ Four categories, about equally many each: `factual_composition`, `relational_lin
 ## Protocol in one paragraph
 
 Build the memory from the full dialogue (the `public/` side only). For each claim, start from the full memory,
-delete the disclosure (S0), then let the system perform its own deletion on the request (S1/S2: its own cleanup).
-Read out twice: **native**, the system's own retrieval and answering on the question; **residual**, the question
-answered from everything the evidence turns still derive (what a reader could reconstruct). The target counts as
-recovered only when the reader picks it under both display orders (2/2). Report the share of claims whose target is
-still recovered (lower is better), and retention: questions about unrelated facts the full memory answered that are
-still answered after the deletion (higher is better). The authors' reference code is the MemCut evaluation toolkit,
-released with this data.
+delete the disclosure (S0), then delete ten further turns chosen from a 20-turn candidate pool by the system's own
+retrieval ranking (S1) or by the model scoring each candidate's relevance to the request (S2). Read out twice:
+**native**, the system's own retrieval and answering on the question; **residual**, the question answered from every
+surviving object derived from the evidence or disclosure turns (what the memory still supports). The target counts
+as recovered only when the reader picks it under both display orders (2/2). Report the share of claims whose target
+is still recovered (lower is better) for both readouts; the hidden-risk share is (residual − native) / residual.
+The authors' reference code is the MemCut evaluation toolkit, released with this data.
 
 ## Files
 
@@ -80,7 +80,7 @@ to add a fact to an episode.
 ## Using the data
 
 - Build the memory from `public/` only; nothing under `author/` may reach the system under test.
-- Report both readouts and retention, not one of them.
+- Report both readouts, not one of them.
 
 The timeline is fictional (session timestamps run through 2026); nothing in the data refers to real persons,
 companies or events.

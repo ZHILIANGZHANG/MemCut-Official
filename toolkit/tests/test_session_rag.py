@@ -529,24 +529,6 @@ def test_always_two_trials_pipeline_audits_original_responses(prepared):
         assert len(runner.read(path)['result']['answers']) == 2
 
 
-def test_run_cli_stops_before_any_api_when_coverage_exceeds_threshold(prepared, monkeypatch):
-    import importlib.util
-    import sys
-    runner, folder, _, factory, _ = prepared
-    spec = importlib.util.spec_from_file_location('session_rag_cli_gate', runner.ROOT/'tools/session_rag.py')
-    cli = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(cli)
-    monkeypatch.setattr(runner, 'Factory', lambda *args, **kwargs: factory)
-    def forbidden_gateway(*args, **kwargs):
-        raise AssertionError('Coverage gate must stop before constructing a model transport')
-    monkeypatch.setattr(runner, 'gateway', forbidden_gateway)
-    monkeypatch.setattr(sys, 'argv', ['session_rag.py', 'run', '--run', str(folder)])
-    cli.main()
-    stage = runner.read(folder/'LAST_STAGE.json')['result']
-    assert stage['stage'] == 'coverage_review_required' and stage['api_calls'] == 0
-    assert any(g['above_25_percent'] for g in stage['coverage'])
-    assert not (folder/'requests').exists()
-    assert not list(folder.glob('claims/*/S2_ORDER.json'))
 
 
 def test_frozen_input_change_fails_plan_loading(prepared):
@@ -666,44 +648,6 @@ def test_orphan_snapshot_seal_is_not_overwritten_by_a_new_bank(prepared):
     assert seal.read_bytes() == old_seal
 
 
-@pytest.mark.parametrize('extended', [False, True])
-def test_cli_reference_inherits_cohort_budget_and_execution(prepared, monkeypatch, capsys, extended):
-    import importlib.util
-    import sys
-    from memcut.answer_execution.early_stop import POLICY
-    from memcut.raw_turn_rag import runner as raw_runner
-    runner, folder, _, _, kwargs = prepared
-    reference = folder.parent / 'turn-reference'
-    ref = raw_runner.prepare(reference, **kwargs, claim_ids=['c2'])
-    if extended:
-        ref['answer_policy'] = {'max_tokens': 768}
-        ref['answer_execution'] = dict(POLICY)
-        write_json(reference / 'PLAN.json', ref)
-    script = runner.ROOT / 'tools/session_rag.py'
-    spec = importlib.util.spec_from_file_location('session_rag_cli_under_test', script)
-    cli = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(cli)
-    output = folder.parent / 'session-from-reference'
-    monkeypatch.setattr(sys, 'argv', [str(script), 'prepare', '--output', str(output),
-                                     '--from-turn-run', str(reference)])
-    cli.main()
-    result = json.loads(capsys.readouterr().out)
-    plan = runner.load_plan(output)
-    assert result['api_calls'] == 0
-    assert [c['claim_id'] for c in plan['claims']] == ['c2']
-    assert plan['qa_max_tokens'] == (768 if extended else 400)
-    assert plan['early_stop'] is extended
-    assert plan['models'] == ref['models']
-    provenance = runner.read(output / 'TURN_RAG_REFERENCE.json')
-    assert provenance['reference_claim_ids'] == ['c2']
-    assert provenance['selected_qa_max_tokens'] == plan['qa_max_tokens']
-    # Requesting a claim outside the paired reference cannot silently widen it.
-    forbidden = folder.parent / 'outside-reference'
-    monkeypatch.setattr(sys, 'argv', [str(script), 'prepare', '--output', str(forbidden),
-                                     '--from-turn-run', str(reference), '--claims', 'c1'])
-    with pytest.raises(ValueError, match='Claims exceed'):
-        cli.main()
-    assert not forbidden.exists()
 
 
 def test_the_chunk_budget_leaves_room_for_the_encoders_document_prefix():

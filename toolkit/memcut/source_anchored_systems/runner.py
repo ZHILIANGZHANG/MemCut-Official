@@ -30,21 +30,8 @@ from memcut.source_anchored_v2.whole_object_deletion import POLICY, delete_sourc
 PROTOCOL = deletion_protocol(evaluation_protocol(NATIVE_STORAGE_PROTOCOL))
 
 
-async def contexts(bank, claim, *, residual_plus=False):
-    result = await primary_contexts(bank, claim)
-    if residual_plus:
-        ids = set(result['residual']['obj_ids'])
-        for t in claim['evidence_turns']:
-            found = await bank.search(bank.turns[t]['text'], top_k=3)
-            ids.update(o.address for o in found.ranked['retrieved_document'])
-        # Native search is only the ID discovery step. Use current stored
-        # bodies even when native-visible episode excerpts are shorter.
-        live = {o.address:o for o in await bank.list_all()}
-        ordered = sorted(ids, key=bank.meta['birth'].__getitem__)
-        text = '\n'.join(live[oid].text for oid in ordered)
-        result['residual_plus'] = {'context':text, 'context_sha256':digest(text),
-            'state_identity':bank.state_identity(), 'obj_ids':ordered, 'empty':not ordered}
-    return result
+async def contexts(bank, claim):
+    return await primary_contexts(bank, claim)
 
 
 def import_source(source):
@@ -69,7 +56,7 @@ def code_identity():
     paths += list((ROOT/'memcut/source_anchored_v2').glob('*.py'))
     paths += [ROOT/p for p in ('memcut/native_memory/lightmem_v1.py',
         'memcut/native_memory/lightmem_formation_v1.py', 'memcut/native_memory/contract.py',
-        'memcut/native_memory/persistence.py', 'tools/source_anchored_s012.py',
+        'memcut/native_memory/persistence.py',
         'configs/source_anchored_systems_v1.json', 'configs/lightmem_native_v1.json')]
     return {str(p.relative_to(ROOT)): sha(p) for p in sorted(paths)}
 
@@ -292,7 +279,7 @@ async def delete(folder, plan, completions, *, factory=None, claim_ids=None):
         if (target/'STATE.json').exists():
             validate_state(folder, plan, claim, condition)
             return target/'state.pkl'
-        ctx = await contexts(bank, claim, residual_plus=plan['residual_plus'])
+        ctx = await contexts(bank, claim)
         sealed_write(target/'STATE.json', {'claim_id': cid, 'condition': condition,
             'plan_sha256': digest(plan), 'snapshot_sha256': sha(target/'state.pkl'),
             'state_identity': bank.state_identity(), 'pool_sha256': pool_sha,
@@ -363,57 +350,9 @@ async def delete(folder, plan, completions, *, factory=None, claim_ids=None):
             factory.close()
 
 
-async def retention(folder, plan, completions, *, factory=None):
-    if not plan['retention']:
-        return
-    folder = Path(folder)
-    own = factory is None
-    factory = factory or Factory(plan)
-    recovery = role_cache(completions, 'answer')
-    full = factory.create(folder/'full/full.pkl')
-    try:
-        for claim in plan['claims']:
-            cid, stable = claim['claim_id'], []
-            for q in plan['retention']:
-                if cid not in q['for_claim_ids']:
-                    continue
-                result = await full.native_context(q['stem'])
-                ctx = {'context': result.native_context['prompt']}
-                answers = [score_response(recovery.complete(answer_request(q, ctx, r, plan['models']['answer'])),
-                           r, q['target_choice_id'], q['choices']) for r in q['rotations'][:2]]
-                sealed_write(folder/'retention'/cid/f'{q["claim_id"]}-Full.json',
-                    {'answers': answers, 'context': ctx['context'], 'state_identity': full.state_identity()})
-                if all(a['target_hit'] for a in answers):
-                    stable.append(q)
-            for condition in plan['conditions']:
-                if condition == 'Full':
-                    continue
-                validate_state(folder, plan, claim, condition)
-                bank = factory.create(folder/'claims'/cid/condition/'state.pkl')
-                try:
-                    records = []
-                    affected = {e['obj_id'] for e in bank.meta['history'] if e['op'] in {'delete', 'rewrite'}}
-                    for q in stable:
-                        native = await bank.native_context(q['stem'])
-                        ctx = {'context': native.native_context['prompt']}
-                        a = score_response(recovery.complete(answer_request(q, ctx, q['rotations'][0], plan['models']['answer'])),
-                                           q['rotations'][0], q['target_choice_id'], q['choices'])
-                        support = {oid for t in q['support_turns'] for oid in full.reverse_trace(t)}
-                        records.append({'question_id': q['claim_id'], 'answer': a,
-                            'context': ctx['context'], 'support_object_touched': bool(support & affected)})
-                    sealed_write(folder/'retention'/cid/f'{condition}.json', {'Q_plus': [q['claim_id'] for q in stable],
-                        'records': records, 'denominator': len(stable), 'state_identity': bank.state_identity(),
-                        'ur': sum(r['answer']['target_hit'] for r in records)/len(stable) if stable else None})
-                finally:
-                    bank.close()
-    finally:
-        full.close()
-        if own:
-            factory.close()
-
 def prepare(folder, *, system, source, contracts, annotations, write_model, answer_model,
             selector_model, endpoint, compatibility='openai', claim_ids=None, k_list=(10,),
-            user_id=None, residual_plus=False, controls=False, retention=None, reuse_full=None,
+            user_id=None, reuse_full=None,
             answer_endpoint=None, answer_compatibility=None, selector_endpoint=None, selector_compatibility=None,
             candidate_objects=20, candidate_turns=20, build_workers=4, checkpoint_turns=80):
     from .formation_runtime import execution
@@ -468,18 +407,6 @@ def prepare(folder, *, system, source, contracts, annotations, write_model, answ
     resolved = {**profile['settings'], 'model': write_model, 'write_transport': providers['write']}
     if system == 'lightmem':
         resolved['source_policy'] = LIGHTMEM_SOURCE_POLICY
-    retention_rows = []
-    if retention:
-        pack = read(retention)
-        if pack['source_sha256'] != sha(source):
-            raise ValueError('Retention source mismatch')
-        for row in pack['questions']:
-            q = normalize_claim({**row, 'claim_id': row['question_id']})
-            q['for_claim_ids'] = row['for_claim_ids']
-            q['support_turns'] = row['support_turns']
-            if not set(q['for_claim_ids']) <= selected or not set(q['support_turns']) <= set(turns):
-                raise ValueError('Retention question is outside planned source/cohort')
-            retention_rows.append(q)
     if any(p['compatibility'] not in {'openai', 'deepseek', 'mimo'} for p in providers.values()):
         raise ValueError('Unknown provider compatibility')
     reuse = None
@@ -496,8 +423,7 @@ def prepare(folder, *, system, source, contracts, annotations, write_model, answ
                        [('source', source), ('contracts', contracts), ('annotations', annotations)]},
             'models': models, 'endpoint': endpoint, 'compatibility': compatibility, 'providers': providers,
             'user_id': user_id or turns[order[0]].get('speaker') or episode['id'],
-            'claims': claims, 'k_list': ks, 'residual_plus': residual_plus,
-            'controls': controls, 'retention': retention_rows, 'reuse_full': reuse,
+            'claims': claims, 'k_list': ks, 'reuse_full': reuse,
             'conditions': ['Full', 'S0'] + [f'{s}@{k}' for s in ('S1', 'S2') for k in ks]}
     folder = Path(folder)
     if folder.exists():
@@ -519,49 +445,13 @@ def answer(folder, plan, completions, *, claim_ids=None):
                 sealed_write(folder / 'claims' / claim['claim_id'] / condition / f'{family}.json', {
                     'claim_id': claim['claim_id'], 'condition': condition, 'family': family,
                     'plan_sha256': digest(plan), 'result': result})
-    if plan['controls']:
-        turns, _, _ = import_source(read(plan['inputs']['source']['path']))
-        for claim in selected_claims:
-            for name, text in [('no_memory', ''), ('complete_evidence', '\n'.join(
-                    turns[t]['text'] for t in dict.fromkeys(claim['evidence_turns'] + claim['disclosure_turns'])))]:
-                ctx = {'context': text, 'context_sha256': digest(text), 'state_identity': name, 'empty': False}
-                result = evaluate(claim, ctx, completions, plan['models']['answer'])
-                sealed_write(folder / 'controls' / claim['claim_id'] / f'{name}.json', result)
 
 
 def report(folder, plan):
-    """Main metrics keep shared scoring; include planned controls and coverage."""
+    """Main metrics keep shared scoring."""
     result = core_report(folder, plan)
     folder = Path(folder)
     result['system'], result['protocol_version'] = plan['system'], plan['protocol']['version']
-    result['controls'] = {}
-    if plan['controls']:
-        for name in ('no_memory','complete_evidence'):
-            rows = []
-            for claim in plan['claims']:
-                path = folder/'controls'/claim['claim_id']/f'{name}.json'
-                if not path.exists():
-                    continue
-                row = read(path)
-                if (len(row['answers']) != ROTATION_COUNT or {a['trial'] for a in row['answers']} != TRIAL_IDS
-                        or row['recovered'] != all(a['target_hit'] for a in row['answers'])):
-                    raise ValueError('Incomplete or inconsistent control result')
-                for a,rotation in zip(row['answers'],claim['rotations']):
-                    rescore = score_response({'text':json.dumps(a['parsed']),'request_id':a['request_id'],
-                        'finish_reason':'stop'},rotation,claim['target_choice_id'],claim['choices'])
-                    if rescore != a:
-                        raise ValueError('Control score differs from frozen choices')
-                rows.append(row['recovered'])
-            result['controls'][name] = {'denominator':len(plan['claims']), 'completed_claims':len(rows),
-                'rate':sum(rows)/len(plan['claims']) if len(rows)==len(plan['claims']) else None}
-    if plan['residual_plus']:
-        result['residual_plus_gap'] = {}
-        for condition in plan['conditions']:
-            base = result['metrics'][f'residual-{condition}']['rate']
-            extra = result['metrics'][f'residual_plus-{condition}']['rate']
-            gap = extra-base if base is not None and extra is not None else None
-            result['residual_plus_gap'][condition] = {'gap':gap,
-                'needs_provenance_review':gap>.05 if gap is not None else None}
     result['main_complete'] = all(v['completed_claims']==len(plan['claims']) for v in result['metrics'].values())
     write_json(folder/'SUMMARY.json',result)
     return result

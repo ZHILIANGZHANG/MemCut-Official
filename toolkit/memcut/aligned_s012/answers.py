@@ -80,8 +80,6 @@ def answer_cap(plan):
 
 
 def answer(folder, plan, completions, *, evaluate, claim_ids=None):
-    if plan['controls']:
-        raise ValueError('The aligned entry plans no controls')
     folder = Path(folder)
     cache = core.role_cache(completions, 'answer')
     unavailable = 0
@@ -105,7 +103,7 @@ def answer(folder, plan, completions, *, evaluate, claim_ids=None):
 
 
 def _families(plan):
-    return ['native', 'residual'] + (['residual_plus'] if plan['residual_plus'] else [])
+    return ['native', 'residual']
 
 
 def available_cohort(folder, plan):

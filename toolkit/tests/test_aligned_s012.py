@@ -88,24 +88,6 @@ def test_runtime_restores_originals_and_real_lightmem_rate(monkeypatch):
     assert runner.load_profile('lightmem') == before
 
 
-@pytest.mark.parametrize('system,raw', [
-    ('information completeness evaluator', '{"reasoning":"not yet"}'),
-    ('missing information query generator', '{"queries":[{"query":"different schema"}]}')])
-def test_simplemem_defaults_keep_raw_and_reuse_exact_receipt(tmp_path, system, raw):
-    native_environment('lancedb')
-    from memcut.simplemem_s012 import client
-    old = client.validate_native_result
-    cache = CachedCompletions(tmp_path, lambda **_: dict(choices=[dict(
-        message=dict(content=raw), finish_reason='stop')]), endpoint='offline-fixture')
-    with runtime('simplemem'):
-        c = client.NativeClient(cache, 'offline-fixture', max_tokens=2048)
-        request = [dict(role='system', content=system), dict(role='user', content='fixture')]
-        assert c.chat_completion(request) == raw
-        assert c.chat_completion(request) == raw
-        assert [x['cached'] for x in cache.calls] == [False, True]
-        with pytest.raises(ValueError):
-            client.validate_native_result({'targeted_queries': 'not a list'}, 'missing information query generator')
-    assert client.validate_native_result is old
 
 
 def test_unresolved_dispatch_blocks_other_stages(tmp_path, monkeypatch):
@@ -118,27 +100,6 @@ def test_unresolved_dispatch_blocks_other_stages(tmp_path, monkeypatch):
     assert not (args.output / 'full').exists()
 
 
-def test_simplemem_entry_runs_all_stages_and_reuses_results(tmp_path, monkeypatch):
-    native_environment('lancedb')
-    from memcut.simplemem_s012 import runner
-    from aligned_fixtures import Embedding, FixtureGateway
-    args = inputs(tmp_path, 'simplemem')
-    plan = entry.prepare(args)
-    factory_type = runner.Factory
-    gateway = FixtureGateway(args.output)
-    monkeypatch.setattr(runner, 'gateway', lambda *a, **k: gateway)
-    monkeypatch.setattr(runner, 'Factory', lambda plan, completions=None:
-        factory_type(plan, completions, embedder=Embedding()))
-    result = entry.execute(args.output)
-    assert all(v['completed_claims'] == 1 for v in result['metrics'].values())
-    assert result['available_cohort']['families']['native']['claims'] == 1
-    assert not (args.output / 'AUDIT.json').exists()
-    assert core.read(args.output / 'STATUS.json')['state'] == 'complete'
-    count = len(list((args.output / 'requests').glob('*/response.json')))
-    entry.execute(args.output)
-    assert len(list((args.output / 'requests').glob('*/response.json'))) == count
-    with runtime('simplemem') as base:
-        assert base.load_plan(args.output) == plan
 
 
 def test_nemori_native_merge_prediction_sources_and_resume(tmp_path):

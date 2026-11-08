@@ -50,7 +50,8 @@ def prepare(args):
     try:
         with runtime(args.system) as base, trial_names(args.system, normalizations):
             options = dict(source=args.source, contracts=args.contracts, annotations=args.annotations,
-                answer_model=args.model, selector_model=args.model, endpoint=args.endpoint, claim_ids=args.claims)
+                answer_model=args.model, selector_model=args.model, endpoint=args.endpoint, claim_ids=args.claims,
+                compatibility=getattr(args, 'compatibility', 'openai'))
             if args.system in RAG:              # formation is local: no write model
                 options.update(native_eval_k=16 if native_eval_k is None else native_eval_k,
                                embedding=embedding or 'e5-small-v2')
@@ -60,14 +61,11 @@ def prepare(args):
                 options.update(write_model=args.model)
             if args.system in ('nemori', 'lightmem'):
                 options.update(system=args.system, build_workers=1, checkpoint_turns=20)
-            elif args.system == 'simplemem':
-                options.update(build_workers=1, answer_workers=1)
             plan = base.prepare(staging, **options)
         plan['alignment'] = identity(args.system)
         plan['aligned_answer_policy'] = ANSWER_POLICY
-        if args.system != 'simplemem':      # SimpleMem's own prepare already records its renames
-            plan['input_normalization'] = {'policy': 'exact-trial-name-to-integer-v1', 'changes': normalizations,
-                                           'source_files_modified': False, 'choice_mapping_changes': False}
+        plan['input_normalization'] = {'policy': 'exact-trial-name-to-integer-v1', 'changes': normalizations,
+                                       'source_files_modified': False, 'choice_mapping_changes': False}
         if args.system == 'memorybank':
             from memcut.answer_execution.early_stop import POLICY
             plan['native_qa'] = {'top_k': 10}
@@ -163,7 +161,7 @@ def execute(folder, command='run'):
                         core.write_json(folder / 'SUMMARY.json', result)
                 else:
                     if gateway is None:
-                        inner = base.gateway(folder, plan) if system == 'simplemem' else core.gateway(folder, plan)[0]
+                        inner = core.gateway(folder, plan)[0]
                         gateway = transport.TransportGateway(inner)
                     result = getattr(base, stage)(folder, plan, gateway)
                     if inspect.isawaitable(result):
@@ -206,6 +204,8 @@ def main():
         p.add_argument('--' + name, required=True)
     p.add_argument('--model', default=qwen.MODEL)
     p.add_argument('--endpoint', default=qwen.ENDPOINT)
+    p.add_argument('--compatibility', choices=['openai', 'deepseek', 'mimo'], default='openai',
+                   help='request convention of the endpoint: deepseek and mimo turn thinking off (default openai)')
     p.add_argument('--claims', nargs='+', help='claim ids, c1 c2 or c1,c2')
     p.add_argument('--native-eval-k', type=int,
                    help='turnrag, sessionrag: items of the native readout (default 16)')

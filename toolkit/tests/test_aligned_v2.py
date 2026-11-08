@@ -180,7 +180,7 @@ def claim(cid):
 
 
 def answer_plan(tmp_path, claims, conditions=('Full', 'S0', 'S1@10', 'S2@10')):
-    plan = {'claims': claims, 'conditions': list(conditions), 'controls': False, 'residual_plus': False,
+    plan = {'claims': claims, 'conditions': list(conditions), 
             'models': {'answer': 'offline'}, 'aligned_answer_policy': ANSWER_POLICY}
     for c in claims:
         for condition in conditions:
@@ -297,25 +297,6 @@ def test_a_frozen_state_error_still_stops_the_stage(tmp_path):
 
 # ---------------------------------------------------------------- systems
 
-@pytest.mark.parametrize('system,value,ok', [
-    ('information requirement analyst', {}, True),
-    ('information requirement analyst', {'minimal_queries_needed': '2', 'key_entities': []}, True),
-    ('information requirement analyst', {'key_entities': 'Mira'}, False),
-    ('query analysis assistant', {'keywords': ["Lin Yue's"]}, True),
-    ('query analysis assistant', {'keywords': 'Lin Yue'}, False),
-    ('query analysis assistant', {'time_expression': 5}, False),
-    ('query generation specialist', {'reasoning': 'x'}, True),
-    ('query generation specialist', {'queries': 'one'}, False),
-    ('information completeness evaluator', {'assessment': 'partial'}, True),
-    ('missing information query generator', {'targeted_queries': ['a', 'b', 'c', 'd']}, True),
-    ('missing information query generator', {'targeted_queries': [{'q': 1}]}, False)])
-def test_simplemem_planner_replies_default_like_upstream(system, value, ok):
-    from memcut.aligned_s012.simplemem import validate_result
-    if ok:
-        validate_result(value, system)
-    else:
-        with pytest.raises(ValueError):
-            validate_result(value, system)
 
 
 def test_nemori_ids_have_the_native_uuid_format_and_bm25_needs_lemmas():
@@ -445,34 +426,3 @@ def test_nemori_flush_semantic_times_and_a_buffered_checkpoint(tmp_path):
         bank.close()
 
 
-def test_simplemem_rejected_keyword_queries_and_a_reproducible_index(tmp_path):
-    native_environment('lancedb')
-    import numpy as np
-    from memcut.aligned_s012.simplemem import native as simplemem_native
-    from memcut.simplemem_s012.client import NativeAbort
-    from memcut.simplemem_s012.native import Store
-    from simplemem.core.models.memory_entry import MemoryEntry
-
-    class Embedding:
-        dimension = 8
-
-        def encode_documents(self, texts):
-            return np.asarray([np.eye(8, dtype=np.float32)[i % 8] for i, _ in enumerate(texts)])
-
-        def encode_single(self, text, is_query=False):
-            return self.encode_documents([text])[0]
-
-    store = Store(tmp_path, Embedding(), 'memory_entries')
-    store.add_entries([MemoryEntry(entry_id=f'e{i:02}', lossless_restatement=f"Lin Yue's trip note {i % 3}")
-                       for i in range(40)])
-    with simplemem_native():
-        store.backend.build_fts()
-        assert store.keyword_search(["Lin Yue's"], top_k=5) == []
-        assert store.calls[-1]['query_rejected'].startswith('Syntax Error')
-        orders = set()
-        for _ in range(8):
-            store.backend.build_fts()
-            orders.add(tuple(e.entry_id for e in store.keyword_search(['trip'], top_k=5)))
-        assert len(orders) == 1 and len(next(iter(orders))) == 5
-    with pytest.raises(NativeAbort):                       # the frozen entries keep their strict behaviour
-        store.keyword_search(["Lin Yue's"], top_k=5)

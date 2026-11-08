@@ -89,8 +89,7 @@ def test_a_case_study_of_an_unknown_episode_is_refused(tmp_path):
     assert not output.exists()
 
 
-@pytest.mark.parametrize('system', ['aligned', 'efficient', 'memorybank', 'memorybank-efficient',
-    'source', 'simplemem', 'turnrag', 'sessionrag', 'glm', 'qwen'])
+@pytest.mark.parametrize('system', ['aligned'])
 def test_cli_help_from_other_directory(tmp_path, system):
     for extra in ([], ['--help']):
         result = subprocess.run([sys.executable, str(ROOT/'run.py'), system, *extra],
@@ -99,13 +98,9 @@ def test_cli_help_from_other_directory(tmp_path, system):
         assert 'usage:' in result.stdout
 
 
-def test_memorybank_policy_patches_actual_cli_module():
-    from tools import memorybank_efficient_s012
-    from memcut.execution_optimization import cli_core
-    assert memorybank_efficient_s012.base is cli_core
 
 
-@pytest.mark.parametrize('system', ['memorybank', 'nemori', 'lightmem', 'simplemem'])
+@pytest.mark.parametrize('system', ['memorybank', 'nemori', 'lightmem'])
 def test_upstream_recipes_are_pinned_inside_release(system):
     config = recipe(system)
     assert len(config['commit']) == 40

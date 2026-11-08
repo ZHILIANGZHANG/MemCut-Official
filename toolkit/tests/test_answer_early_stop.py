@@ -10,7 +10,6 @@ from unittest.mock import patch
 from memcut.answer_execution import early_stop
 from memcut.native_memory.contract import digest
 from memcut.source_anchored_v2 import evaluation, runner
-from tools import memorybank_efficient_s012 as entry
 
 
 def claim(cid='c1'):
@@ -116,21 +115,6 @@ class EarlyStopTests(unittest.TestCase):
         with self.assertRaises(ValueError):early_stop.evaluate(c,context(),rec,'fixture')
         self.assertEqual(rec.requests,[])
 
-    def test_runtime_requires_explicit_policy_and_restores_old_functions(self):
-        p={'execution_optimization':{'system':'memorybank'},'answer_execution':entry.policy(),
-           'native_qa':{'top_k':10},'controls':False,'retention':[],'residual_plus':False}
-        original=entry.base.scheduling.evaluate
-        with entry.runtime(p,native=False):
-            self.assertIs(entry.base.scheduling.evaluate,early_stop.evaluate)
-            self.assertIs(runner.summarize,early_stop.summarize)
-        self.assertIs(entry.base.scheduling.evaluate,original)
-        self.assertIs(runner.summarize,evaluation.summarize)
-        for field,value in [('answer_execution',{}),('controls',True),('residual_plus',True),('retention',['q'])]:
-            bad={**p,field:value}
-            with self.subTest(field=field),self.assertRaises(ValueError):
-                with entry.runtime(bad,native=False):pass
-        bad=copy.deepcopy(p);bad['execution_optimization']['system']='lightmem'
-        with self.assertRaises(ValueError):entry.validate(bad)
 
 
 if __name__=='__main__':unittest.main()

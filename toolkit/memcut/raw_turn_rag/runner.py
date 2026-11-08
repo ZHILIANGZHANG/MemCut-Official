@@ -25,7 +25,7 @@ PROTOCOL = {**copy.deepcopy(shared.PROTOCOL), 'version': VERSION + '-whole-objec
 
 
 def code_identity():
-    paths = list(Path(__file__).parent.glob('*.py')) + [CONFIG, REGISTRY, ROOT/'tools/raw_turn_rag.py']
+    paths = list(Path(__file__).parent.glob('*.py')) + [CONFIG, REGISTRY]
     # Freeze every reused implementation without adding files to old globbed packages.
     paths += [ROOT/p for p in shared.code_identity()]
     return {str(p.relative_to(ROOT)): sha(p) for p in sorted(set(paths))}
@@ -62,7 +62,7 @@ def load_plan(folder):
 def prepare(folder, *, source, contracts, annotations, answer_model, endpoint,
             selector_model=None, compatibility='openai', claim_ids=None, k_list=(10,),
             candidate_objects=20, candidate_turns=20, native_eval_k=16, embedding=DEFAULT_EMBEDDING,
-            controls=False, residual_plus=False, reuse_full=None,
+            reuse_full=None,
             selector_endpoint=None, selector_compatibility=None):
     if type(native_eval_k) is not int or native_eval_k <= 0:
         raise ValueError('native_eval_k must be positive')
@@ -121,7 +121,7 @@ def prepare(folder, *, source, contracts, annotations, answer_model, endpoint,
                              'compatibility': selector_compatibility or compatibility,
                              'key_env': 'MEMCUT_SELECTOR_API_KEY' if selector_endpoint else 'MEMCUT_MODEL_API_KEY'}},
             'endpoint': endpoint, 'compatibility': compatibility, 'reuse_full': reuse,
-            'controls': controls, 'residual_plus': residual_plus, 'retention': [],
+            
             'protocol_document_sha256': sha(ROOT/'PROTOCOL.md'),
             'conditions': ['Full', 'S0'] + [f'{s}@{k}' for s in ('S1', 'S2') for k in ks]}
     folder = Path(folder)
@@ -210,7 +210,7 @@ async def delete(folder, plan, completions=None, *, factory=None, claim_ids=None
             if state['state_identity'] != bank.state_identity() or state['pool_sha256'] != pool_sha:
                 raise ValueError('Saved branch identity differs')
         else:
-            ctx = await shared.contexts(bank, claim, residual_plus=plan['residual_plus'])
+            ctx = await shared.contexts(bank, claim)
             sealed_write(target/'STATE.json', {'claim_id': claim['claim_id'], 'condition': condition,
                 'plan_sha256': digest(plan), 'snapshot_sha256': sha(path),
                 'state_identity': bank.state_identity(), 'pool_sha256': pool_sha,

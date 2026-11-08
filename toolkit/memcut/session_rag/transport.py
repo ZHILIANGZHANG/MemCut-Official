@@ -87,7 +87,11 @@ def provider_profile(model, endpoint, compatibility):
         'mimo-v2.6-flash': ({'https://api.xiaomimimo.com/v1'}, 'mimo', {'thinking': {'type': 'disabled'}}),
     }
     if model not in known:
-        raise ValueError('Unsupported SessionRAG model; use an explicit supported profile')
+        # Any other model: a plain OpenAI-compatible endpoint, as on the other systems' entries.
+        if compatibility not in {'openai', 'deepseek', 'mimo'}:
+            raise ValueError('Unknown provider compatibility')
+        return {'version': 'session-rag-provider-v1', 'model': model, 'endpoint': endpoint,
+                'compatibility': compatibility, 'automatic_retries': 0, 'settings': {}}
     endpoints, expected, settings = known[model]
     if endpoint not in endpoints or compatibility != expected:
         raise ValueError('Model requires its frozen official endpoint and compatibility')

@@ -70,7 +70,7 @@ def prepared(tmp_path):
         'carriers': [annotation(c, i) for c in ('c1','c2') for i in (1,2)],
         'distractors': [annotation(c,29) for c in ('c1','c2')]})
     kwargs = dict(source=source, contracts=tmp_path/'contracts.json', annotations=tmp_path/'annotations.json',
-                  answer_model='offline-fixture', endpoint='offline-fixture', controls=True, k_list=[1,10])
+                  answer_model='offline-fixture', endpoint='offline-fixture', k_list=[1,10])
     folder = tmp_path/'run'
     plan = runner.prepare(folder, **kwargs)
     embedding = FixtureEmbedding()
@@ -180,21 +180,6 @@ def test_one_to_one_duplicate_text_deletion_rollback_and_no_gold_injection(prepa
     assert not result['recovered'] and result['answers'] == []
 
 
-def test_candidate40_and_insufficient_budget_remain_explicit(prepared):
-    folder, _, _, kwargs = prepared
-    other = folder.parent/'large'
-    plan = runner.prepare(other, **kwargs, candidate_objects=40, candidate_turns=40)
-    factory = runner.Factory(plan, embedder=FixtureEmbedding())
-    runner.build(other, plan, factory=factory)
-    asyncio.run(runner.delete(other, plan, factory=factory, claim_ids=['c1'], strategies=['S1']))
-    assert runner.read(other/'claims/c1/POOL.json')['actual_objects'] == 39
-    small = folder.parent/'small'
-    plan = runner.prepare(small, **kwargs, candidate_objects=5, candidate_turns=5)
-    factory = runner.Factory(plan, embedder=FixtureEmbedding())
-    runner.build(small, plan, factory=factory)
-    asyncio.run(runner.delete(small, plan, factory=factory, claim_ids=['c1'], strategies=['S1']))
-    r = runner.read(small/'claims/c1/S1@10/RECEIPT.json')
-    assert r['actual_k'] == 5 and not r['budget_complete']
 
 
 @pytest.mark.parametrize('name', ['e5-small-v2', 'all-MiniLM-L6-v2'])

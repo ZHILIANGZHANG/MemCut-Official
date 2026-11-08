@@ -8,7 +8,7 @@ from .completions import parse_json
 from .scoring import ROTATION_COUNT, TRIAL_IDS, SCORING, validate_claim_rotations
 
 
-async def contexts(bank, claim, *, residual_plus=False):
+async def contexts(bank, claim):
     native = await bank.native_context(claim['stem'])
     objects = await bank.residual_objects(claim['evidence_turns'] + claim['disclosure_turns'])
     result = {
@@ -17,14 +17,6 @@ async def contexts(bank, claim, *, residual_plus=False):
         'residual': {'context': '\n'.join(o.text for o in objects), 'obj_ids': [o.address for o in objects],
                      'empty': not objects, 'evidence_derived_empty': not objects},
     }
-    if residual_plus:
-        by_id = {o.address: o for o in objects}
-        for t in claim['evidence_turns']:
-            search = await bank.search(bank.meta['turns'][t]['text'], top_k=3)
-            by_id.update({o.address: o for o in search.ranked['retrieved_document']})
-        extra = sorted(by_id.values(), key=lambda o: bank.meta['birth'][o.address])
-        result['residual_plus'] = {'context': '\n'.join(o.text for o in extra),
-            'obj_ids': [o.address for o in extra], 'empty': not extra}
     for row in result.values():
         row['state_identity'] = bank.state_identity()
         row['context_sha256'] = digest(row['context'])

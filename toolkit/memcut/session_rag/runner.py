@@ -17,7 +17,7 @@ from memcut.raw_turn_rag.embedding import LocalEmbeddings, DEFAULT_EMBEDDING, RE
 
 ROOT = Path(__file__).resolve().parents[2]
 CONFIG = ROOT / 'configs/session_rag_v1.json'
-PROTOCOL_DOC = ROOT / 'docs/integrations/SESSION_RAG_S012.md'
+PROTOCOL_DOC = ROOT / 'PROTOCOL.md'
 PROTOCOL = {**copy.deepcopy(shared.PROTOCOL), 'version': VERSION + '-precise-turn-delete-eval2of2',
     'candidate_search': 'top20 live sessions by max chunk cosine on S0, then raw-turn cosine cap20',
     'deletion_policy': DELETION_POLICY,
@@ -29,7 +29,7 @@ PROTOCOL = {**copy.deepcopy(shared.PROTOCOL), 'version': VERSION + '-precise-tur
 
 
 def code_identity():
-    paths = list(Path(__file__).parent.glob('*.py')) + [CONFIG, REGISTRY, ROOT/'tools/session_rag.py']
+    paths = list(Path(__file__).parent.glob('*.py')) + [CONFIG, REGISTRY]
     paths += [ROOT/p for p in shared.code_identity()]
     paths += [ROOT/p for p in ('memcut/raw_turn_rag/embedding.py', 'memcut/raw_turn_rag/bank.py',
         'memcut/answer_execution/early_stop.py', 'memcut/efficient_execution/recovery.py',
@@ -78,10 +78,8 @@ def load_plan(folder):
 def prepare(folder, *, source, contracts, annotations, answer_model, endpoint,
             selector_model=None, compatibility='openai', claim_ids=None, k_list=(10,),
             candidate_objects=20, candidate_turns=20, native_eval_k=16, embedding=DEFAULT_EMBEDDING,
-            controls=False, residual_plus=False, reuse_full=None,
+            reuse_full=None,
             selector_endpoint=None, selector_compatibility=None, qa_max_tokens=1024, early_stop=True):
-    if controls or residual_plus:
-        raise ValueError('Session RAG v1 covers native/residual main readouts only')
     if type(qa_max_tokens) is not int or qa_max_tokens <= 0 or type(early_stop) is not bool:
         raise ValueError('Invalid answer execution settings')
     if type(native_eval_k) is not int or native_eval_k <= 0:
@@ -141,7 +139,7 @@ def prepare(folder, *, source, contracts, annotations, answer_model, endpoint,
                              'compatibility': selector_compatibility or compatibility,
                              'key_env': 'MEMCUT_SELECTOR_API_KEY' if selector_endpoint and selector_endpoint != endpoint else 'MEMCUT_MODEL_API_KEY'}},
             'endpoint': endpoint, 'compatibility': compatibility, 'reuse_full': reuse,
-            'controls': controls, 'residual_plus': residual_plus, 'retention': [],
+            
             'protocol_document_sha256': sha(PROTOCOL_DOC),
             'conditions': ['Full', 'S0'] + [f'{s}@{k}' for s in ('S1', 'S2') for k in ks]}
     from .transport import provider_profile

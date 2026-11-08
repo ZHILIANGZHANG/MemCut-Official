@@ -38,13 +38,13 @@ and temporal state.
 - **Native recovery**: the system answers through its own retrieval, as a user of the assistant would see it.
 - **Residual recovery**: a reader answers from every surviving object derived from the fact's evidence, i.e. what the
   memory still supports.
-- **Retention**: unrelated facts the full memory answered that are still answered after the deletion.
+- **Hidden-risk share**: (residual − native) / residual, the part of what the memory still supports that its own
+  retrieval does not surface.
 
 Deletion runs through three reference baselines: **S0** deletes the disclosure, **S1** adds retrieval-ranked cleanup
-and **S2** adds LLM-guided cleanup over the same candidate pool. The toolkit runs the paper's five memory designs,
-**Turn RAG**, **Session RAG**, **MemoryBank**, **Nemori** and **LightMem**, each through its own upstream code, and
-also includes an adapter for **SimpleMem**. Turn RAG and Session RAG work with either `e5-small-v2` or
-`all-MiniLM-L6-v2` as the retrieval encoder.
+and **S2** adds LLM-guided cleanup over the same candidate pool. The toolkit runs the five memory designs,
+**Turn RAG**, **Session RAG**, **MemoryBank**, **Nemori** and **LightMem**, each through its own upstream code. Turn RAG
+and Session RAG work with either `e5-small-v2` or `all-MiniLM-L6-v2` as the retrieval encoder.
 
 ## Repository layout
 

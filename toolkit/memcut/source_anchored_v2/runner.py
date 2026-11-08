@@ -32,7 +32,7 @@ def sha(path):
 
 def code_identity():
     paths = list(Path(__file__).parent.glob('*.py')) + [ROOT / 'memcut/native_memory/memorybank.py',
-        ROOT / 'tools/memorybank_s012.py', ROOT / 'configs/native_memory_profiles.json']
+        ROOT / 'configs/native_memory_profiles.json']
     return {str(p.relative_to(ROOT)): sha(p) for p in sorted(paths)}
 
 
@@ -61,7 +61,7 @@ def normalize_claim(row):
 
 def prepare(folder, *, source, contracts, annotations, write_model, answer_model,
             selector_model, endpoint, compatibility='openai', claim_ids=None, k_list=(10,),
-            user_id=None, residual_plus=False, controls=False, retention=None, reuse_full=None,
+            user_id=None, reuse_full=None,
             answer_endpoint=None, answer_compatibility=None, selector_endpoint=None, selector_compatibility=None):
     source, contracts, annotations = map(lambda p: Path(p).resolve(), (source, contracts, annotations))
     episode, contract, annotation = read(source), read(contracts), read(annotations)
@@ -113,18 +113,6 @@ def prepare(folder, *, source, contracts, annotations, write_model, answer_model
                      'key_env': 'MEMCUT_SELECTOR_API_KEY' if selector_endpoint else 'MEMCUT_MODEL_API_KEY'},
     }
     resolved = {k: resolve_profile('memorybank_faiss_en', model=m, base_url=providers[k]['endpoint']) for k, m in models.items()}
-    retention_rows = []
-    if retention:
-        pack = read(retention)
-        if pack['source_sha256'] != sha(source):
-            raise ValueError('Retention source mismatch')
-        for row in pack['questions']:
-            q = normalize_claim({**row, 'claim_id': row['question_id']})
-            q['for_claim_ids'] = row['for_claim_ids']
-            q['support_turns'] = row['support_turns']
-            if not set(q['for_claim_ids']) <= selected or not set(q['support_turns']) <= set(turns):
-                raise ValueError('Retention question is outside planned source/cohort')
-            retention_rows.append(q)
     if any(p['compatibility'] not in {'openai', 'deepseek', 'mimo'} for p in providers.values()):
         raise ValueError('Unknown provider compatibility')
     reuse = None
@@ -140,8 +128,7 @@ def prepare(folder, *, source, contracts, annotations, write_model, answer_model
                        [('source', source), ('contracts', contracts), ('annotations', annotations)]},
             'models': models, 'endpoint': endpoint, 'compatibility': compatibility, 'providers': providers,
             'user_id': user_id or turns[order[0]].get('speaker') or episode['id'],
-            'claims': claims, 'k_list': ks, 'residual_plus': residual_plus,
-            'controls': controls, 'retention': retention_rows, 'reuse_full': reuse,
+            'claims': claims, 'k_list': ks, 'reuse_full': reuse,
             'conditions': ['Full', 'S0'] + [f'{s}@{k}' for s in ('S1', 'S2') for k in ks]}
     folder = Path(folder)
     if folder.exists():
@@ -278,7 +265,7 @@ async def delete(folder, plan, completions, *, seed=None, claim_ids=None):
             target.mkdir(parents=True, exist_ok=True)
             if not (target / 'state.pkl').exists():
                 bank.snapshot(target / 'state.pkl')
-            ctx = await contexts(bank, claim, residual_plus=plan['residual_plus'])
+            ctx = await contexts(bank, claim)
             artifact = {'claim_id': cid, 'condition': condition, 'plan_sha256': digest(plan),
                         'snapshot_sha256': sha(target / 'state.pkl'), 'state_identity': bank.state_identity(),
                         'pool_sha256': pool_sha, 'deletion': receipt, 'contexts': ctx}
@@ -357,60 +344,11 @@ def answer(folder, plan, completions, *, claim_ids=None):
                 sealed_write(folder / 'claims' / claim['claim_id'] / condition / f'{family}.json', {
                     'claim_id': claim['claim_id'], 'condition': condition, 'family': family,
                     'plan_sha256': digest(plan), 'result': result})
-    if plan['controls']:
-        turns, _, _ = import_source(read(plan['inputs']['source']['path']))
-        for claim in selected_claims:
-            for name, text in [('no_memory', ''), ('complete_evidence', '\n'.join(
-                    turns[t]['text'] for t in dict.fromkeys(claim['evidence_turns'] + claim['disclosure_turns'])))]:
-                ctx = {'context': text, 'context_sha256': digest(text), 'state_identity': name, 'empty': False}
-                result = evaluate(claim, ctx, completions, plan['models']['answer'])
-                sealed_write(folder / 'controls' / claim['claim_id'] / f'{name}.json', result)
-
-
-async def retention(folder, plan, completions, *, seed=None):
-    """Two fixed Full probes define Q+, then the first probe measures retention."""
-    if not plan['retention']:
-        return
-    folder = Path(folder)
-    completions = role_cache(completions, 'answer')
-    seed = seed or template(folder, plan)
-    with tempfile.TemporaryDirectory(prefix='memorybank-retention-') as temp:
-        for claim in plan['claims']:
-            questions = [q for q in plan['retention'] if claim['claim_id'] in q['for_claim_ids']]
-            full = branch(seed, Path(temp) / f'{claim["claim_id"]}-full.pkl', folder / 'full/full.pkl')
-            stable = []
-            for q in questions:
-                native = await full.native_context(q['stem'])
-                ctx = {'context': native.native_context['prompt']}
-                answers = [score_response(completions.complete(answer_request(q, ctx, r, plan['models']['answer'])),
-                                          r, q['target_choice_id'], q['choices']) for r in q['rotations'][:2]]
-                sealed_write(folder / 'retention' / claim['claim_id'] / f'{q["claim_id"]}-Full.json', {'answers': answers})
-                if all(a['target_hit'] for a in answers):
-                    stable.append(q)
-            for condition in plan['conditions']:
-                if condition == 'Full':
-                    continue
-                state = validate_state(folder, plan, claim, condition)
-                bank = branch(seed, Path(temp) / f'{claim["claim_id"]}-{condition}.pkl',
-                              folder / 'claims' / claim['claim_id'] / condition / 'state.pkl')
-                records = []
-                affected = {e['obj_id'] for e in bank.meta['history'] if e['op'] in {'delete', 'rewrite'}}
-                for q in stable:
-                    native = await bank.native_context(q['stem'])
-                    ctx = {'context': native.native_context['prompt']}
-                    a = score_response(completions.complete(answer_request(q, ctx, q['rotations'][0], plan['models']['answer'])),
-                                       q['rotations'][0], q['target_choice_id'], q['choices'])
-                    support = {oid for t in q['support_turns'] for oid in full.meta['der'].get(t, [])}
-                    records.append({'question_id': q['claim_id'], 'answer': a,
-                                    'support_object_touched': bool(support & affected)})
-                sealed_write(folder / 'retention' / claim['claim_id'] / f'{condition}.json', {
-                    'Q_plus': [q['claim_id'] for q in stable], 'records': records,
-                    'denominator': len(stable), 'ur': sum(r['answer']['target_hit'] for r in records)/len(stable) if stable else None})
 
 
 def report(folder, plan):
     folder = Path(folder)
-    families = ['native', 'residual'] + (['residual_plus'] if plan['residual_plus'] else [])
+    families = ['native', 'residual']
     rows = []
     for claim in plan['claims']:
         for condition in plan['conditions']:
@@ -450,12 +388,5 @@ def report(folder, plan):
     if 'S2@10' in plan['conditions']:
         result['named_metrics'] = {name: result['metrics'][key] for name, key in
                                   [('native-S2', 'native-S2@10'), ('residual-S2', 'residual-S2@10')]}
-    if plan.get('retention'):
-        result['utility'] = []
-        for claim in plan['claims']:
-            for condition in plan['conditions']:
-                path = folder / 'retention' / claim['claim_id'] / f'{condition}.json'
-                if path.exists():
-                    result['utility'].append({'claim_id': claim['claim_id'], 'condition': condition, **read(path)})
     write_json(folder / 'SUMMARY.json', result)
     return result

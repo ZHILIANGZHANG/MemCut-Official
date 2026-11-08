@@ -11,11 +11,11 @@ way; its overlay is a full example.
 
 ```bash
 python tools/extend_episode.py --bundle memcut_v1.zip --overlay my_fact.json --output data/my_fact
-python run.py turnrag prepare --output outputs/my-fact \
+python run.py aligned prepare --system turnrag --output outputs/my-fact \
   --source data/my_fact/data/EP08B/public/EP08B.json \
   --contracts data/my_fact/data/EP08B/author/CLAIM_CONTRACTS.json \
   --annotations data/my_fact/data/EP08B/author/ANNOTATIONS.json \
-  --answer-model YOUR_MODEL_ID --endpoint https://YOUR_PROVIDER/v1
+  --model YOUR_MODEL_ID --endpoint https://YOUR_PROVIDER/v1
 ```
 
 ## The overlay format (`memcut.case_overlay.v1`)

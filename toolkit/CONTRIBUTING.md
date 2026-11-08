@@ -14,8 +14,8 @@ python -m pytest -c pytest.ini tests -q        # no key, network or model weight
 - **New facts**: follow [docs/EXTENDING_DATA.md](docs/EXTENDING_DATA.md); send the overlay, not a modified episode,
   and say which reader-model checks you ran.
 - **A change to shared protocol code** (`memcut/source_anchored_v2/`, scoring, the candidate pool, the readouts):
-  explain the effect on results. Such a change gives every entry point a new code identity, and earlier PLANs are
-  not resumed under it.
+  explain the effect on results. Such a change gives a new code identity, and earlier PLANs are not resumed under
+  it.
 
 ## Rules the code relies on
 
@@ -28,5 +28,4 @@ python -m pytest -c pytest.ini tests -q        # no key, network or model weight
 
 ## Reporting a problem
 
-Include the entry point, the PLAN's `code` identity, the stage, and the error text. `turnrag`, `sessionrag`, `source` and
-`simplemem` have a `doctor` command that checks the installation without a model call.
+Include the system, the PLAN's `code` identity, the stage, and the error text.

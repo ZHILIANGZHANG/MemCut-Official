@@ -11,16 +11,6 @@ if sys.platform == 'darwin':     # faiss and torch each bundle libomp on macOS; 
 ROOT = Path(__file__).resolve().parent
 ENTRIES = {
     'aligned': 'memcut_s012.py',
-    'aligned-retention': 'aligned_retention.py',
-    'efficient': 'efficient_s012.py',
-    'memorybank': 'memorybank_s012.py',
-    'memorybank-efficient': 'memorybank_efficient_s012.py',
-    'source': 'source_anchored_s012.py',
-    'simplemem': 'simplemem_s012.py',
-    'turnrag': 'raw_turn_rag.py',
-    'sessionrag': 'session_rag.py',
-    'glm': 'glm_s012.py',
-    'qwen': 'qwen_s012.py',
 }
 
 
