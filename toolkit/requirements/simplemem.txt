@@ -1,0 +1,4 @@
+-r encoder.txt
+-r ../configs/simplemem_runtime_requirements.txt
+python-dotenv>=1,<2
+rich>=13,<16

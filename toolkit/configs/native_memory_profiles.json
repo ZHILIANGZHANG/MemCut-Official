@@ -1,0 +1,80 @@
+{
+  "schema_version": 1,
+  "profiles": {
+    "memorybank_faiss_en": {
+      "system": "memorybank",
+      "reference": "English SiliconFriend JSON+FAISS memory path with CLI retrieval configuration and native ChatGLM evaluation prompt, not the ChatGPT LlamaIndex branch",
+      "upstream": {
+        "repository": "runtime/upstream/memorybank",
+        "commit": "cf61c4196e4cfdb0f2b7a0316249fa40312dc3a9",
+        "source_kind": "git",
+        "upstream_file_hashes": {
+          "memory_bank/memory_retrieval/local_doc_qa.py": "854539a4fd60a0d4fcf3e4fe3bf510596f38af2c7a6eb0bf957c2c9c51c3f184",
+          "memory_bank/memory_retrieval/configs/model_config.py": "6c14cf64aeebadcf14bc157ec816d5e137d9cd8669c9c7e621e0a9ba0284e16c",
+          "memory_bank/summarize_memory.py": "a78e708b41b89591dcf2bd716e718cc2b80fa5b8db50d596eedcc5e1c7a68213",
+          "utils/sys_args.py": "9750dea0647d204c68638435d54d2fbfbd280fe88da9538deadf9a53380d1212",
+          "utils/prompt_utils.py": "dcce80020952bbf72ad450e8a4d035d6304bdd26b1c3b4feb6cfab4aa86c02b4",
+          "utils/memory_utils.py": "320db88cf93b2f8ddc2b0e33250cc59dd82c3bb07047eb1b6d19bbc50b53d2fa",
+          "SiliconFriend-ChatGLM-BELLE/cli_demo.py": "115b27bbe43b856277490b99f3339c592a78a33f085a4206454f355cad2734dc"
+        }
+      },
+      "config": {
+        "retrieval": {
+          "embedding_model": "minilm-l6",
+          "embedding_model_name": "all-MiniLM-L6-v2",
+          "top_k": 2,
+          "language": "en",
+          "chunk_size": 200,
+          "device_policy": "upstream_cuda_else_mps_else_cpu"
+        },
+        "memory": {
+          "enable_forget_mechanism": false,
+          "max_history": 7,
+          "user_keyword": "[|User|]",
+          "ai_keyword": "[|AI|]",
+          "assistant_name": "SiliconFriend"
+        },
+        "summary_request": {
+          "model": "gpt-3.5-turbo",
+          "temperature": 0.7,
+          "max_tokens": 400,
+          "top_p": 1.0,
+          "frequency_penalty": 0.4,
+          "presence_penalty": 0.2,
+          "stop": [
+            "<|im_end|>",
+            "¬人类¬"
+          ],
+          "n": 1
+        },
+        "answer_reference": {
+          "model": "THUDM/chatglm-6b",
+          "temperature": 1.0,
+          "top_p": 0.95,
+          "max_length_tokens": 1024,
+          "max_context_length_tokens": 200
+        },
+        "formation": {
+          "summary_functions": "summarize_memory native prompts",
+          "summary_schedule": "explicit_after_complete_history",
+          "schedule_status": "benchmark adaptation of upstream user-triggered summarization"
+        },
+        "prompt": {
+          "builder": "build_prompt_with_search_memory_chatglm_eval",
+          "template": "generate_meta_prompt_dict_chatglm_belle_eval",
+          "recent_history_policy": "empty_for_deletion_context",
+          "status": "explicit benchmark context policy; CLI itself retains up to 7 history pairs"
+        }
+      },
+      "scope_notes": [
+        "CLI DataArguments passes k=2; the retriever class fallback k=3 is not the CLI setting.",
+        "CHUNK_SIZE=200 counts characters for adjacent-document expansion, not tokens or a cap on the base hit.",
+        "The selected native prompt includes overall_personality and recent dialogue. overall_history content is not interpolated, although its presence affects the app gate.",
+        "Upstream summarization is user-triggered. One summarization after complete historical import is the explicit replay policy; native daily and overall functions are retained.",
+        "API backbone replacement retains memory prompts, storage and retrieval; it is not exact local ChatGLM/BELLE model inference.",
+        "Forgetting defaults to disabled. The locally patched forget_memory.py is not selected.",
+        "The deletion context uses the upstream evaluation prompt with empty recent history, not the CLI new-user fallback; this context policy is recorded, not a full chat-UI reproduction."
+      ]
+    }
+  }
+}

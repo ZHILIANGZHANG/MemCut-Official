@@ -1,0 +1,73 @@
+{
+  "repository": "runtime/upstream/simplemem",
+  "url": "https://github.com/aiming-lab/SimpleMem.git",
+  "commit": "db80b6a7c591e0ea730a058e9f5fc4eb06572299",
+  "mode": "text",
+  "files": {
+    "LICENSE": "276dc8cc9eb5a8c59d1edca3283163815d2caa512b17bd0bf053050304b4cd3e",
+    "simplemem/__init__.py": "4a08e5986d32f6ec89485a8d67d30df36a53e768f6724bed4e6cc0ecf7f9ad56",
+    "simplemem/config.py": "2929648721debc490617f033b98c11959e5aa062cfe4425282e347189d0467ef",
+    "simplemem/core/__init__.py": "fabc99c84f1ca8fdecd49c496cb09d6af8cc7ebae9b05535da82183b1610be67",
+    "simplemem/core/answer_generator.py": "ba8946134e9db0de63da00a9f223229800d2487c6fd34d22d7c5296093d0470c",
+    "simplemem/core/config_default.py": "77b06780502e42a62ed308eee75dadd2a8192f20b127177bb14b5c614cc622cf",
+    "simplemem/core/database/__init__.py": "e623f8d4fd590473a0cb1ca73e016f9760b07efe08542bae352436ec4b4faada",
+    "simplemem/core/database/vector_store.py": "a7519fa27cfcfdceb4e146780c948c96e2840cea11965a94c296b786623fff29",
+    "simplemem/core/database/vector_store_backend.py": "2406f5c267f9013af0dc34c8668def8b20b3e66326827c57d975f6129f502c26",
+    "simplemem/core/hybrid_retriever.py": "63d6a3522e8a4c5d3a073b5dbf8ac003844c37993bf16033bb5c9a3807db5381",
+    "simplemem/core/memory_builder.py": "ade5d9c252158ede2d0bd4ca3da027e913d6e88dbe616e00f5962178053c9dc7",
+    "simplemem/core/models/__init__.py": "a64a0ee787d6476b3f488c8e3276ee337aae16763fb9b38158cd8ccc81b8ac06",
+    "simplemem/core/models/memory_entry.py": "487209f5d6981a12568ec3f6f4597d2bd1437a82a0ef9af85c5dc755bc2947c8",
+    "simplemem/core/settings.py": "3ca77f1d035fd309a541fdc7555e8519ddb9d77ce4f82161f1fa027619784de2",
+    "simplemem/core/utils/__init__.py": "d348d4588c4de3874438b576b3e92c6ff6015238506eaea712277973de478eb0",
+    "simplemem/core/utils/embedding.py": "da72ef639c5c0f6a6d9a0ecd5f4f45f65019da52e32191571ac718ff0b7c6d68",
+    "simplemem/core/utils/llm_client.py": "19533ebf5b3a12096c70ae35df54305d8b307b22240377ce1977e2aaff527bd8",
+    "simplemem/router.py": "fe29f316d4606679e910ae45689558938006cd6699b92eeb8cfffd589f361bb0"
+  },
+  "native_packages": {
+    "lancedb": "0.25.3",
+    "pyarrow": "22.0.0",
+    "tantivy": "0.25.1",
+    "dateparser": "1.2.2",
+    "pylance": "0.39.0",
+    "lance-namespace": "0.0.21",
+    "lance-namespace-urllib3-client": "0.0.21",
+    "numpy": "2.2.6",
+    "pydantic": "2.12.0"
+  },
+  "settings": {
+    "source_policy": "simplemem-inline-contributing-sources-v2",
+    "model": null,
+    "window_size": 40,
+    "overlap_size": 2,
+    "formation_mode": "native-add_dialogues_parallel-single-bulk-v1",
+    "write_max_tokens": 8192,
+    "embedding": {
+      "model": "sentence-transformers/all-MiniLM-L6-v2",
+      "revision": "1110a243fdf4706b3f48f1d95db1a4f5529b4d41",
+      "dimensions": 384,
+      "max_seq_length": 256,
+      "normalize_embeddings": true,
+      "device": "cpu",
+      "dtype": "float32",
+      "batch_size": 64
+    },
+    "native_eval_k": null,
+    "retrieval": {
+      "policy": "simplemem-native-planning-ordered-union-v1",
+      "semantic_top_k": 25,
+      "keyword_top_k": 5,
+      "structured_top_k": 5,
+      "enable_planning": true,
+      "enable_reflection": true,
+      "max_reflection_rounds": 2,
+      "max_retrieval_workers": 4,
+      "max_tokens": 2048,
+      "time_reference": "source-end"
+    },
+    "storage": {
+      "table_name": "memory_entries",
+      "fts": "tantivy-en_stem",
+      "metric": "native-default-l2"
+    }
+  }
+}

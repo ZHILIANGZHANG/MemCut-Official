@@ -1,0 +1,13 @@
+MemCut evaluation toolkit: third-party components
+
+This toolkit does not vendor other projects' source. `tools/setup_upstreams.py` clones the memory systems under test
+at fixed commits into `runtime/upstream/` on the user's machine; each keeps its own license:
+
+- MemoryBank (SiliconFriend)  https://github.com/zhongwanjun/MemoryBank-SiliconFriend  (MIT)
+- Nemori                      see configs/source_anchored_systems_v1.json for the pinned commit and repository
+- LightMem                    see configs/lightmem_native_v1.json for the pinned commit and repository
+- SimpleMem                   https://github.com/aiming-lab/SimpleMem  (pinned in configs/simplemem_s012_v1.json)
+
+Model weights and tokenizer files are downloaded by `tools/download_assets.py` from their publishers (Hugging Face,
+OpenAI's public tiktoken files) under their own terms; none are included here. The MemCut data bundle is released
+separately under CC BY 4.0.

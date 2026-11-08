@@ -1,0 +1,20 @@
+cff-version: 1.2.0
+message: "If you use MemCut or this toolkit, please cite the MemCut paper."
+title: "MemCut: benchmark data and evaluation toolkit"
+type: dataset
+license:
+  - CC-BY-4.0
+  - MIT
+repository-code: "https://github.com/ZHILIANGZHANG/MemCut-Official"
+authors:
+  - name: "The MemCut authors"
+preferred-citation:
+  type: article
+  title: "MemCut: Every Secret Leaves a Trail in the Long-Term Memory of LLM Agents"
+  authors:
+    - name: "The MemCut authors"
+  year: 2026
+  identifiers:
+    - type: other
+      value: "arXiv:2610.21405"
+  url: "https://arxiv.org/abs/2610.21405"

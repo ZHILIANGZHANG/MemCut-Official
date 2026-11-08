@@ -1,0 +1,11 @@
+-r encoder.txt
+chromadb==1.0.20
+qdrant-client==1.15.1
+rank-bm25==0.2.2
+llmlingua==0.2.2
+spacy>=3.8,<4
+aiofiles>=23,<26
+python-dotenv>=1,<2
+Jinja2>=3.1,<4
+nltk>=3.8,<4
+faiss-cpu>=1.7,<2
