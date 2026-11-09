@@ -2,23 +2,21 @@
   <img src="assets/memcut_logo.png" alt="MemCut" width="260">
 </p>
 
-<h3 align="center">🧠✂️ Can your agent's memory really forget?</h3>
+<h3 align="center">Can your agent's memory really forget?</h3>
 
 <p align="center">
   <a href="https://arxiv.org/abs/2610.21405"><img src="https://img.shields.io/badge/arXiv-2610.21405-b31b1b?logo=arxiv&logoColor=white" alt="arXiv"></a>
   <a href="dataset/LICENSE"><img src="https://img.shields.io/badge/data-CC%20BY%204.0-ef9421?logo=creativecommons&logoColor=white" alt="Data: CC BY 4.0"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/code-MIT-3da639?logo=opensourceinitiative&logoColor=white" alt="Code: MIT"></a>
   <img src="https://img.shields.io/badge/python-3.11-3776ab?logo=python&logoColor=white" alt="Python 3.11">
-  <img src="https://img.shields.io/badge/facts-456-6f42c1" alt="456 facts">
-  <img src="https://img.shields.io/badge/systems-5%20built--in-0a7ea4" alt="5 built-in systems">
 </p>
 
 <p align="center">
-  <a href="#quick-start">🚀 Quick start</a> &nbsp;·&nbsp;
-  <a href="#your-own-system">🔌 Your own system</a> &nbsp;·&nbsp;
-  <a href="#use-the-data">📦 Use the data</a> &nbsp;·&nbsp;
-  <a href="#documentation">📚 Docs</a> &nbsp;·&nbsp;
-  <a href="#citation">📝 Citation</a>
+  <a href="#quick-start">Quick start</a> ·
+  <a href="#your-own-system">Your own system</a> ·
+  <a href="#use-the-data">Use the data</a> ·
+  <a href="#documentation">Docs</a> ·
+  <a href="#citation">Citation</a>
 </p>
 
 ---
@@ -29,37 +27,37 @@ ordinary messages the memory keeps: a booking, a filing, a dinner invitation.
 
 <table align="center">
   <tr>
-    <td align="center">💬<br><b>43,402</b><br><sub>messages in 15 episodes</sub></td>
-    <td align="center">🔒<br><b>456</b><br><sub>protected facts</sub></td>
-    <td align="center">🧩<br><b>6–10</b><br><sub>evidence messages per fact</sub></td>
-    <td align="center">🕸️<br><b>7,148</b><br><sub>minimal sufficient sets</sub></td>
-    <td align="center">🎭<br><b>~27</b><br><sub>look-alike distractors per fact</sub></td>
+    <td align="center"><b>43,402</b><br><sub>messages in 15 episodes</sub></td>
+    <td align="center"><b>456</b><br><sub>protected facts</sub></td>
+    <td align="center"><b>6–10</b><br><sub>evidence messages per fact</sub></td>
+    <td align="center"><b>7,148</b><br><sub>minimal sufficient sets</sub></td>
+    <td align="center"><b>~27</b><br><sub>look-alike distractors per fact</sub></td>
   </tr>
 </table>
 
 Each fact comes with the user's deletion request, the message that discloses it, the evidence it can be derived
-from, look-alike distractors and a five-option question, across four kinds of derivation:
-🧱 factual composition · 🔗 relational linking · ➕ aggregation · ⏳ temporal state.
+from, look-alike distractors and a five-option question, across four kinds of derivation: factual composition,
+relational linking, aggregation and temporal state.
 
 <a id="how-a-system-is-scored"></a>
 ## 🔍 How a system is scored
 
 ```mermaid
 flowchart LR
-    A["💬 Dialogue"] --> B["🏗️ Build the memory"]
-    B --> C["✂️ Delete<br/>S0: the disclosure<br/>S1 / S2: + 10 more turns"]
-    C --> D["🔎 Native readout<br/>the system's own retrieval"]
-    C --> E["🧪 Residual readout<br/>everything still derived<br/>from the evidence"]
-    D --> F{"✅ Recovered?"}
+    A["Dialogue"] --> B["Build the memory"]
+    B --> C["Delete<br/>S0: the disclosure<br/>S1 / S2: + 10 more turns"]
+    C --> D["Native readout<br/>the system's own retrieval"]
+    C --> E["Residual readout<br/>everything still derived<br/>from the evidence"]
+    D --> F{"Recovered?"}
     E --> F
 ```
 
 | Step | What happens |
 |:---:|---|
-| 🏗️ **Build** | The system builds its memory from the full dialogue. |
-| ✂️ **Delete** | Each fact gets its own branch. **S0** removes the disclosure. **S1** also removes the 10 turns the system's own retrieval ranks highest for the request. **S2** lets the model choose those 10 from the same 20 candidates. Deleting a turn removes everything the memory derived from it. |
-| 🔎 **Read out** | **Native**: the system answers through its own retrieval. **Residual**: the model answers from every surviving memory object derived from the evidence. |
-| ✅ **Score** | A fact is recovered only if the right option is chosen under both display orders. |
+| **Build** | The system builds its memory from the full dialogue. |
+| **Delete** | Each fact gets its own branch. **S0** removes the disclosure. **S1** also removes the 10 turns the system's own retrieval ranks highest for the request. **S2** lets the model choose those 10 from the same 20 candidates. Deleting a turn removes everything the memory derived from it. |
+| **Read out** | **Native**: the system answers through its own retrieval. **Residual**: the model answers from every surviving memory object derived from the evidence. |
+| **Score** | A fact is recovered only if the right option is chosen under both display orders. |
 
 > [!TIP]
 > Lower recovery means better forgetting. The **hidden-risk share**, (residual − native) / residual, is what the
@@ -68,13 +66,13 @@ flowchart LR
 <a id="quick-start"></a>
 ## 🚀 Quick start
 
-### 1️⃣ Check the data
+### 1. Check the data
 
 ```bash
 python3 dataset/validate.py dataset/memcut_v1.zip      # Python 3, no dependencies
 ```
 
-### 2️⃣ Install the toolkit and run its offline tests
+### 2. Install the toolkit and run its offline tests
 
 ```bash
 cd toolkit
@@ -85,7 +83,7 @@ python tools/download_assets.py coverage
 python -m pytest -c pytest.ini tests -q                # no API key, no model weights
 ```
 
-### 3️⃣ Evaluate a built-in system on one episode
+### 3. Evaluate a built-in system on one episode
 
 Turn RAG is the quickest: it builds its memory with a local encoder and no LLM calls.
 
@@ -112,13 +110,13 @@ python run.py aligned run --run outputs/turnrag-ep01  # build → delete → ans
 
 | Built-in system | `--system` | What it stores |
 |---|---|---|
-| 📄 Turn RAG | `turnrag` | every turn, verbatim |
-| 🗂️ Session RAG | `sessionrag` | every session, verbatim |
-| 🏦 MemoryBank | `memorybank` | conversation pairs, daily summaries, a user portrait |
-| 📖 Nemori | `nemori` | episode narratives and semantic memories |
-| 💡 LightMem | `lightmem` | compressed, consolidated memory entries |
+| Turn RAG | `turnrag` | every turn, verbatim |
+| Session RAG | `sessionrag` | every session, verbatim |
+| MemoryBank | `memorybank` | conversation pairs, daily summaries, a user portrait |
+| Nemori | `nemori` | episode narratives and semantic memories |
+| LightMem | `lightmem` | compressed, consolidated memory entries |
 
-### 4️⃣ Read the result
+### 4. Read the result
 
 `outputs/turnrag-ep01/SUMMARY.json` has one entry per readout and condition, for example (numbers illustrative):
 
@@ -128,10 +126,10 @@ python run.py aligned run --run outputs/turnrag-ep01  # build → delete → ans
 
 | Key | Meaning |
 |---|---|
-| 🟢 `native-Full`, `residual-Full` | recovery before any deletion: what the memory holds |
-| 🟡 `native-S0`, `residual-S0` | after deleting the disclosure |
-| 🟠 `native-S1@10`, `residual-S1@10` | after deleting 10 more turns ranked by the system's retrieval |
-| 🔴 `native-S2@10`, `residual-S2@10` | after deleting 10 more turns chosen by the model |
+| `native-Full`, `residual-Full` | recovery before any deletion: what the memory holds |
+| `native-S0`, `residual-S0` | after deleting the disclosure |
+| `native-S1@10`, `residual-S1@10` | after deleting 10 more turns ranked by the system's retrieval |
+| `native-S2@10`, `residual-S2@10` | after deleting 10 more turns chosen by the model |
 
 Per-fact details (what was deleted, the candidates and S2's scores, every answer) are under
 `outputs/turnrag-ep01/claims/`. Run every episode, `EP01`–`EP15`, for the full benchmark.
@@ -143,13 +141,12 @@ Your system needs four things: build its memory from the dialogue while recordin
 came from, retrieve, delete objects, and list what it stores. The candidate pool, S0/S1/S2, both readouts and the
 scoring are shared code.
 
-| | Step |
-|:---:|---|
-| 📋 | Copy [`toolkit/examples/keyword_bank.py`](toolkit/examples/keyword_bank.py), a complete memory system in about 100 lines, and replace its storage and retrieval with yours. |
-| 🧪 | Check it offline with a test like [`toolkit/tests/test_example_bank.py`](toolkit/tests/test_example_bank.py). |
-| ▶️ | Register it with the `aligned` entry point and run it as above. |
+1. Copy [`toolkit/examples/keyword_bank.py`](toolkit/examples/keyword_bank.py), a complete memory system in about
+   100 lines, and replace its storage and retrieval with yours.
+2. Check it offline with a test like [`toolkit/tests/test_example_bank.py`](toolkit/tests/test_example_bank.py).
+3. Register it with the `aligned` entry point and run it as above.
 
-👉 Step-by-step guide: [toolkit/docs/ADDING_A_SYSTEM.md](toolkit/docs/ADDING_A_SYSTEM.md)
+Step-by-step guide: [toolkit/docs/ADDING_A_SYSTEM.md](toolkit/docs/ADDING_A_SYSTEM.md)
 
 <a id="use-the-data"></a>
 ## 📦 Use the data directly
@@ -160,7 +157,7 @@ Have your own pipeline? Read the bundle without the toolkit.
 > Your system may read only the `public/` dialogue. Everything under `author/` is for scoring.
 
 <details>
-<summary><b>🐍 Read the benchmark in Python</b></summary>
+<summary><b>Read the benchmark in Python</b></summary>
 
 ```python
 import json, zipfile
@@ -186,20 +183,20 @@ for ep in manifest["episodes"]:
 
 | File | Contents |
 |---|---|
-| 💬 `public/EPxx.json` | the dialogue: sessions of user and assistant messages |
-| 🎯 `author/CLAIM_CONTRACTS.json` | facts, deletion requests, questions, options, display orders |
-| 🏷️ `author/ANNOTATIONS.json` | evidence, disclosure and distractor turns of each fact |
-| 🕸️ `author/SUPPORT_PATHS.json` · `PATH_COMBINATION_AUDIT.json` | minimal sufficient evidence sets and minimum cuts |
+| `public/EPxx.json` | the dialogue: sessions of user and assistant messages |
+| `author/CLAIM_CONTRACTS.json` | facts, deletion requests, questions, options, display orders |
+| `author/ANNOTATIONS.json` | evidence, disclosure and distractor turns of each fact |
+| `author/SUPPORT_PATHS.json` · `PATH_COMBINATION_AUDIT.json` | minimal sufficient evidence sets and minimum cuts |
 
-The full format is in [dataset/SCHEMA.md](dataset/SCHEMA.md). ➕ To add your own facts to an episode, see
+The full format is in [dataset/SCHEMA.md](dataset/SCHEMA.md). To add your own facts to an episode, see
 [toolkit/docs/EXTENDING_DATA.md](toolkit/docs/EXTENDING_DATA.md).
 
 ## 🗂️ Repository layout
 
 ```
-📁 dataset/   memcut_v1.zip (the benchmark), its data card, schema, license and validator
-📁 toolkit/   the evaluation code: five built-in systems, the S0/S1/S2 pipeline, tests and guides
-📁 assets/    logo
+dataset/   memcut_v1.zip (the benchmark), its data card, schema, license and validator
+toolkit/   the evaluation code: five built-in systems, the S0/S1/S2 pipeline, tests and guides
+assets/    logo
 ```
 
 <a id="documentation"></a>
@@ -207,13 +204,13 @@ The full format is in [dataset/SCHEMA.md](dataset/SCHEMA.md). ➕ To add your ow
 
 | I want to | Guide |
 |---|---|
-| ⚙️ Install and run the built-in systems | [toolkit/docs/USAGE.md](toolkit/docs/USAGE.md) |
-| 🧠 Know what each built-in system stores and how deep it retrieves | [toolkit/docs/SYSTEMS.md](toolkit/docs/SYSTEMS.md) |
-| 🔌 Evaluate my own memory system | [toolkit/docs/ADDING_A_SYSTEM.md](toolkit/docs/ADDING_A_SYSTEM.md) |
-| ➕ Add my own facts to an episode | [toolkit/docs/EXTENDING_DATA.md](toolkit/docs/EXTENDING_DATA.md) |
-| 📏 Read the scoring rules | [toolkit/docs/PROTOCOL.md](toolkit/docs/PROTOCOL.md) · full spec: [toolkit/PROTOCOL.md](toolkit/PROTOCOL.md) |
-| 🗃️ Understand the data format | [dataset/README.md](dataset/README.md) · [dataset/SCHEMA.md](dataset/SCHEMA.md) |
-| 🤝 Contribute | [toolkit/CONTRIBUTING.md](toolkit/CONTRIBUTING.md) |
+| Install and run the built-in systems | [toolkit/docs/USAGE.md](toolkit/docs/USAGE.md) |
+| Know what each built-in system stores and how deep it retrieves | [toolkit/docs/SYSTEMS.md](toolkit/docs/SYSTEMS.md) |
+| Evaluate my own memory system | [toolkit/docs/ADDING_A_SYSTEM.md](toolkit/docs/ADDING_A_SYSTEM.md) |
+| Add my own facts to an episode | [toolkit/docs/EXTENDING_DATA.md](toolkit/docs/EXTENDING_DATA.md) |
+| Read the scoring rules | [toolkit/docs/PROTOCOL.md](toolkit/docs/PROTOCOL.md) · full spec: [toolkit/PROTOCOL.md](toolkit/PROTOCOL.md) |
+| Understand the data format | [dataset/README.md](dataset/README.md) · [dataset/SCHEMA.md](dataset/SCHEMA.md) |
+| Contribute | [toolkit/CONTRIBUTING.md](toolkit/CONTRIBUTING.md) |
 
 <a id="citation"></a>
 ## 📝 Citation
@@ -233,6 +230,6 @@ If MemCut helps your research, please cite:
 
 ## ⚖️ License
 
-📦 Data in `dataset/` is released under [CC BY 4.0](dataset/LICENSE). 💻 Code in `toolkit/` and
+Data in `dataset/` is released under [CC BY 4.0](dataset/LICENSE). Code in `toolkit/` and
 `dataset/validate.py` is released under the [MIT License](LICENSE). The memory systems under test are fetched from
 their own repositories at setup and keep their own licenses ([toolkit/NOTICE](toolkit/NOTICE)).
