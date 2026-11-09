@@ -9,7 +9,7 @@ import numpy as np
 from memcut.native_memory.contract import digest
 
 REGISTRY = Path(__file__).resolve().parents[2] / 'configs/embeddings.json'
-DEFAULT_EMBEDDING = 'e5-small-v2'      # the paper's encoder; all-MiniLM-L6-v2 is the equal alternative
+DEFAULT_EMBEDDING = 'e5-small-v2'      # all-MiniLM-L6-v2 is the equal alternative
 
 
 def embedding_choices():

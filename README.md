@@ -98,7 +98,6 @@ Each system runs in its own environment with its own upstream code and assets; s
 | I want to | Guide |
 |---|---|
 | Install and run a memory system | [toolkit/docs/USAGE.md](toolkit/docs/USAGE.md) |
-| Reproduce a table or figure of the paper | [toolkit/docs/REPRODUCE.md](toolkit/docs/REPRODUCE.md) |
 | Evaluate my own memory system | [toolkit/docs/ADDING_A_SYSTEM.md](toolkit/docs/ADDING_A_SYSTEM.md) |
 | Add my own facts to an episode | [toolkit/docs/EXTENDING_DATA.md](toolkit/docs/EXTENDING_DATA.md) |
 | Read the full protocol | [toolkit/PROTOCOL.md](toolkit/PROTOCOL.md) |

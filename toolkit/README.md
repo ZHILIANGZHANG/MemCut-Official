@@ -54,7 +54,6 @@ Each system needs its own environment and upstream checkout; see [docs/USAGE.md]
 | The five systems: what they store, provenance, retrieval depths | [docs/SYSTEMS.md](docs/SYSTEMS.md) |
 | Scoring rules in one page | [docs/PROTOCOL.md](docs/PROTOCOL.md) |
 | The full specification | [PROTOCOL.md](PROTOCOL.md) |
-| The paper's main results and the commands that produce them | [docs/REPRODUCE.md](docs/REPRODUCE.md) |
 | Evaluating your own memory system | [docs/ADDING_A_SYSTEM.md](docs/ADDING_A_SYSTEM.md), starting from [examples/keyword_bank.py](examples/keyword_bank.py) |
 | Adding facts to an episode | [docs/EXTENDING_DATA.md](docs/EXTENDING_DATA.md) |
 | Layout of the package | [docs/STRUCTURE.md](docs/STRUCTURE.md) |

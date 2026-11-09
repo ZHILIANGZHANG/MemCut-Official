@@ -33,9 +33,6 @@ def prepare(args):
     folder = Path(args.output)
     if folder.exists():
         raise FileExistsError('Use a new run directory; historical plans are immutable')
-    if args.model == qwen.MODEL and args.endpoint.rstrip('/') != qwen.ENDPOINT:
-        # The Qwen profile refuses any other endpoint at the first dispatch; say so before freezing a plan.
-        raise ValueError(f'{qwen.MODEL} is served from {qwen.ENDPOINT} only (got {args.endpoint})')
     native_eval_k = getattr(args, 'native_eval_k', None)
     accept_coverage = bool(getattr(args, 'accept_coverage', False))
     embedding = getattr(args, 'embedding', None)

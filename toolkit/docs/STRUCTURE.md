@@ -21,7 +21,7 @@ toolkit/
 ├── configs/                       # upstream commits, native settings, retrieval encoders
 ├── requirements/                  # per-environment dependency files
 ├── tests/                         # synthetic fixtures and zero-API tests
-├── docs/                          # usage, systems, protocol summary, reproduction, extension guides
+├── docs/                          # usage, systems, protocol summary, extension guides
 ├── PROTOCOL.md                    # the full specification
 └── CITATION.cff  CONTRIBUTING.md  LICENSE  NOTICE
 ```

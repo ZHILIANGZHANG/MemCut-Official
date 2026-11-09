@@ -19,7 +19,8 @@ def install():
  from memcut.efficient_execution import replay
  old=CachedCompletions.complete;old_identity=receipts.request_identity
  def checked(cache,q):
-  if q.get('model')==MODEL and (cache.endpoint.rstrip('/')!=ENDPOINT or cache.compatibility!='openai'):raise ValueError('Qwen profile requires Beijing Bailian endpoint')
+  # The Bailian thinking flags apply on the Bailian endpoint only; any other endpoint gets the plain request.
+  if q.get('model')==MODEL and (cache.endpoint.rstrip('/')!=ENDPOINT or cache.compatibility!='openai'):return q
   return normalize(q)
  def complete(self,q,**kw):return old(self,checked(self,q),**kw)
  def identity(cache,q):return old_identity(cache,checked(cache,q))

@@ -46,13 +46,6 @@ def test_string_trial_names_prepare_for_every_system(tmp_path, system, monkeypat
         assert base.load_plan(args.output) == plan
 
 
-def test_the_qwen_profile_is_checked_before_a_plan_is_frozen(tmp_path, monkeypatch):
-    profile_fixture(monkeypatch, 'memorybank')
-    args = inputs(tmp_path, 'memorybank')
-    args.model, args.endpoint = qwen.MODEL, 'https://elsewhere.invalid/v1'
-    with pytest.raises(ValueError, match='served from'):
-        entry.prepare(args)
-    assert not args.output.exists()
 
 
 def test_an_interrupted_prepare_leaves_no_half_plan(tmp_path, monkeypatch):
