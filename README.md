@@ -19,14 +19,9 @@
   <a href="#citation">Citation</a>
 </p>
 
-<br>
-
-**MemCut** tests whether an LLM agent's long-term memory can forget a fact when the user asks it to.
-
-Deleting the message that states a secret is easy. The hard part is everything around it: a booking, a filing, a
-dinner invitation. MemCut checks whether the secret can still be **pieced together** from what the memory keeps.
-
-<br>
+**MemCut** tests whether an LLM agent's long-term memory can forget a fact when the user asks it to. Deleting the
+message that states a secret is easy; the hard part is everything around it, such as a booking, a filing or a dinner
+invitation. MemCut checks whether the secret can still be **pieced together** from what the memory keeps.
 
 <table align="center">
   <tr>
@@ -38,19 +33,9 @@ dinner invitation. MemCut checks whether the secret can still be **pieced togeth
   </tr>
 </table>
 
-<br>
-
-Every fact comes with:
-
-- the user's **deletion request**
-- the **disclosure**, the message that states it outright
-- the **evidence** it can still be derived from
-- look-alike **distractors**
-- a five-option **question**
-
-The facts cover four kinds of derivation: factual composition, relational linking, aggregation and temporal state.
-
-<br>
+Every fact comes with the user's **deletion request**, the **disclosure** (the message that states it outright), the
+**evidence** it can still be derived from, look-alike **distractors** and a five-option **question**. The facts cover
+four kinds of derivation: factual composition, relational linking, aggregation and temporal state.
 
 ---
 
@@ -79,19 +64,13 @@ flowchart LR
 
 Deleting a turn removes everything the memory derived from it.
 
-**Read out.** The question is asked twice.
-
-- **Native**: through the system's own retrieval, as a user would see it.
-- **Residual**: over every memory object still derived from the evidence.
+**Read out.** The question is asked twice: **native**, through the system's own retrieval, as a user would see it;
+and **residual**, over every memory object still derived from the evidence.
 
 **Score.** A fact counts as recovered only if the right option is chosen under both display orders.
 
 > [!TIP]
-> Lower recovery means better forgetting.
->
-> The **hidden-risk share**, (residual − native) / residual, is what the memory still supports but does not show.
-
-<br>
+> Lower recovery means better forgetting. The **hidden-risk share**, (residual − native) / residual, is what the memory still supports but does not show.
 
 ---
 
@@ -101,12 +80,8 @@ Deleting a turn removes everything the memory derived from it.
 ### 1. Check the data
 
 ```bash
-python3 dataset/validate.py dataset/memcut_v1.zip
+python3 dataset/validate.py dataset/memcut_v1.zip      # no dependencies
 ```
-
-No dependencies needed.
-
-<br>
 
 ### 2. Install the toolkit
 
@@ -116,12 +91,8 @@ python3.11 -m venv .venv && . .venv/bin/activate
 python -m pip install -r requirements-dev.txt
 export TIKTOKEN_CACHE_DIR="$PWD/runtime/tiktoken"
 python tools/download_assets.py coverage
-python -m pytest -c pytest.ini tests -q
+python -m pytest -c pytest.ini tests -q                # offline: no API key, no model weights
 ```
-
-The tests run offline: no API key, no model weights.
-
-<br>
 
 ### 3. Evaluate a built-in system
 
@@ -140,21 +111,16 @@ python run.py aligned prepare --system turnrag --output outputs/turnrag-ep01 \
   --contracts $EP/author/CLAIM_CONTRACTS.json \
   --annotations $EP/author/ANNOTATIONS.json \
   --model YOUR_MODEL --endpoint https://YOUR_PROVIDER/v1
-```
 
-```bash
 export MEMCUT_MODEL_API_KEY=...
-python run.py aligned run --run outputs/turnrag-ep01
+python run.py aligned run --run outputs/turnrag-ep01   # build → delete → answer → report; resumable
 ```
-
-`run` goes build → delete → answer → report, and resumes where it stopped.
 
 > [!NOTE]
 > Any OpenAI-compatible endpoint works. For DeepSeek or MiMo, add `--compatibility deepseek` or `mimo`.
 
 <details>
 <summary><b>All five built-in systems</b></summary>
-<br>
 
 | System | `--system` | What it stores |
 |---|---|---|
@@ -169,17 +135,13 @@ Setup for each one is in [toolkit/docs/USAGE.md](toolkit/docs/USAGE.md).
 
 </details>
 
-<br>
-
 ### 4. Read the result
 
-The scores are in `outputs/turnrag-ep01/SUMMARY.json`, one entry per readout and condition:
+The scores are in `outputs/turnrag-ep01/SUMMARY.json`, one entry per readout and condition (numbers illustrative):
 
 ```json
 "residual-S2@10": {"denominator": 28, "completed_claims": 28, "rate": 0.39, "ci95": [0.21, 0.57]}
 ```
-
-<sub>Numbers illustrative.</sub>
 
 | Key | Recovery … |
 |---|---|
@@ -188,40 +150,22 @@ The scores are in `outputs/turnrag-ep01/SUMMARY.json`, one entry per readout and
 | `native-S1@10` · `residual-S1@10` | after S1 |
 | `native-S2@10` · `residual-S2@10` | after S2 |
 
-Per-fact details are under `outputs/turnrag-ep01/claims/`.
-
-For the full benchmark, run all fifteen episodes, `EP01` to `EP15`.
-
-<br>
+Per-fact details are under `outputs/turnrag-ep01/claims/`. For the full benchmark, run all fifteen episodes.
 
 ---
 
 <a id="your-own-system"></a>
 ## 🔌 Evaluate your own memory system
 
-Your system only needs to:
+Your system only needs to build its memory (recording which turns each stored object came from), retrieve, delete
+objects and list what it stores. The candidate pool, S0 / S1 / S2, both readouts and the scoring are shared code.
 
-- build its memory, recording which turns each stored object came from
-- retrieve
-- delete objects
-- list what it stores
-
-Everything else is shared: the candidate pool, S0 / S1 / S2, both readouts and the scoring.
-
-<br>
-
-**1.** Copy [`toolkit/examples/keyword_bank.py`](toolkit/examples/keyword_bank.py), a complete memory system in
-about 100 lines. Replace its storage and retrieval with yours.
-
-**2.** Check it offline with a test like [`toolkit/tests/test_example_bank.py`](toolkit/tests/test_example_bank.py).
-
-**3.** Register it with the `aligned` entry point and run it as above.
-
-<br>
+1. Copy [`toolkit/examples/keyword_bank.py`](toolkit/examples/keyword_bank.py), a complete memory system in about
+   100 lines, and replace its storage and retrieval with yours.
+2. Check it offline with a test like [`toolkit/tests/test_example_bank.py`](toolkit/tests/test_example_bank.py).
+3. Register it with the `aligned` entry point and run it as above.
 
 Step-by-step guide: [toolkit/docs/ADDING_A_SYSTEM.md](toolkit/docs/ADDING_A_SYSTEM.md)
-
-<br>
 
 ---
 
@@ -243,7 +187,6 @@ Have your own pipeline? Read the bundle without the toolkit.
 
 <details>
 <summary><b>Read the benchmark in Python</b></summary>
-<br>
 
 ```python
 import json, zipfile
@@ -271,13 +214,7 @@ for ep in manifest["episodes"]:
 
 </details>
 
-<br>
-
-Full format: [dataset/SCHEMA.md](dataset/SCHEMA.md)
-
-Add your own facts to an episode: [toolkit/docs/EXTENDING_DATA.md](toolkit/docs/EXTENDING_DATA.md)
-
-<br>
+Full format: [dataset/SCHEMA.md](dataset/SCHEMA.md) · Add your own facts: [toolkit/docs/EXTENDING_DATA.md](toolkit/docs/EXTENDING_DATA.md)
 
 ---
 
@@ -288,8 +225,6 @@ dataset/    the benchmark (memcut_v1.zip), data card, schema, license, validator
 toolkit/    evaluation code, five built-in systems, tests and guides
 assets/     logo
 ```
-
-<br>
 
 ---
 
@@ -305,8 +240,6 @@ assets/     logo
 | Read the scoring rules | [PROTOCOL.md](toolkit/docs/PROTOCOL.md) · [full spec](toolkit/PROTOCOL.md) |
 | Understand the data format | [data card](dataset/README.md) · [schema](dataset/SCHEMA.md) |
 | Contribute | [CONTRIBUTING.md](toolkit/CONTRIBUTING.md) |
-
-<br>
 
 ---
 
@@ -326,12 +259,7 @@ If MemCut helps your research, please cite:
 }
 ```
 
-<br>
-
 ## ⚖️ License
 
-Data: [CC BY 4.0](dataset/LICENSE)
-
-Code: [MIT](LICENSE)
-
-The memory systems under test keep their own licenses ([NOTICE](toolkit/NOTICE)).
+Data: [CC BY 4.0](dataset/LICENSE) · Code: [MIT](LICENSE) · The memory systems under test keep their own licenses
+([NOTICE](toolkit/NOTICE)).
